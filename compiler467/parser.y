@@ -53,11 +53,18 @@ extern int yyline;        /* variable holding current line number   */
 // Can access me from flex useing yyval
 
 %union {
-  int num;
+  int as_int;
+  float as_float;
+  
+  char* as_id;
+  char* as_keyword;
 }
 // TODO:Replace myToken with your tokens, you can use these tokens in flex
-%token           myToken1 myToken2  
-
+%token		myToken1 myToken2
+%token		WS
+%token		IF ELSE
+%token		ID
+%token		INT_C
 
 %start    program
 
@@ -82,7 +89,10 @@ tokens
 // TODO: replace myToken with the token the you defined.
 token
   :     myToken1 
-  |     myToken2                     
+  |     myToken2
+  |	IF
+  |	ELSE
+  |	INT_C
   ;
 
 
