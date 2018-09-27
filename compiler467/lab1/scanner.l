@@ -34,26 +34,7 @@ if			{ yTRACE(IF); return IF; }
 else			{ yTRACE(ELSE); return ELSE; }
 
 
-{ID}			{
-				/*identifier*/
-				yTRACE(yytext);
-				printf("yyleng is %d\n", yyleng);
-				if (yylval.as_id) {
-#ifdef DEBUG_MODE
-				printf("[debug]yylval is not NULL\n");
-#endif
-				free(yylval.as_id);
-				}
-				yylval.as_id = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
-				strcpy(yylval.as_id, yytext);
-#ifdef DEBUG_MODE
-				printf("[debug]yylval.as_id = %s\n", yylval.as_id);
-#endif
-				return ID;
-			}
-
-
-[+|-]*{DIGIT}			{
+[+|-]*{DIGIT}+			{
 					/*integer number*/
 					yTRACE(yytext);
 					yylval.as_int = atoi(yytext);
@@ -63,7 +44,7 @@ else			{ yTRACE(ELSE); return ELSE; }
 					return INT_C;
 				}
 
-[+|-]*{DIGIT}*"."{DIGIT}	{
+[+|-]*{DIGIT}*"."{DIGIT}+	{
 					/*float number*/
 					yTRACE(yytext);
 					yylval.as_float = atof(yytext);
@@ -72,8 +53,38 @@ else			{ yTRACE(ELSE); return ELSE; }
 #endif
 				}
 
-"/*"		{ yERROR("Change this - comment unimplemented."); }
+{ID}			{
+				/*identifier*/
+				yTRACE(yytext);
+				//printf("yyleng is %d\n", yyleng);
+				if (yylval.as_id == NULL) {
+#ifdef DEBUG_MODE
+					printf("[debug]yylval is not NULL\n");
+#endif
+					free(yylval.as_id);
+				}
+				//FIXME: potential mem leak
+				yylval.as_id = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
+				strcpy(yylval.as_id, yytext);
+#ifdef DEBUG_MODE
+				printf("[debug]yylval.as_id = %s\n", yylval.as_id);
+#endif
+				return ID;
+			}
 
-.		{ yERROR("Unknown token"); }
+
+{DIGIT}+{ID}		{
+				/*FIXME: hacky checking...*/
+				yERROR("Unsupported Identifier\n");
+			}
+
+
+[/*].*[*/]			{ yTRACE("Comment detected.\n"); }
+
+"!"				{ yTRACE("NOT op\n"); }
+"&&"|"||"|"=="|"!="|">"|">="|"<"|"<="		{ yTRACE("Conditional op\n");}
+
+
+.		{ yERROR("Unknown token\n"); }
 
 %%
