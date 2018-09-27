@@ -63,8 +63,17 @@ extern int yyline;        /* variable holding current line number   */
 %token		myToken1 myToken2
 %token		WS
 %token		IF ELSE
+%token          ASSIGNMENT
 %token		ID
+
+%token          SIGN
+%token		INT_T
 %token		INT_C
+%token		FLOAT_T
+%token		FLOAT_C
+%token		BOOL_T
+%token		BOOL_C
+
 
 %start    program
 
@@ -92,7 +101,18 @@ token
   |     myToken2
   |	IF
   |	ELSE
+  |	ASSIGNMENT
+  |     ID
+  |     SIGN
+  |	INT_T
   |	INT_C
+  |	FLOAT_T
+  |	FLOAT_C
+  |	BOOL_T
+  |	BOOL_C
+
+
+
   ;
 
 

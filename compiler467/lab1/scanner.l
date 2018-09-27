@@ -14,6 +14,7 @@
 #define	yyinput      input
 #define yTRACE(x)    { if (traceScanner) fprintf(traceFile, "TOKEN %3d : %s\n", x, yytext); }
 #define yERROR(x)    { fprintf(errorFile, "\nLEXICAL ERROR, LINE %d: %s\n", yyline, x); errorOccurred = TRUE; yyterminate(); }
+#define yDEBUG(x)    { if (DEBUG_MODE) fprintf("%s", x); }
 
 int CheckInt(void);
 int yyline = 1;
@@ -23,20 +24,28 @@ int yyline = 1;
 
 WS          [ \t\n\v\r\f]
 
+SIGN        [+|-]
 DIGIT       [0-9]
 ID          [a-zA-Z][a-zA-Z0-9]*
+TF          (true|false)
 
 %%
+
 {WS}			{ return WS; }
 
 if			{ yTRACE(IF); return IF; }
 
 else			{ yTRACE(ELSE); return ELSE; }
 
+=                       { yTRACE(ASSIGNMENT); return ASSIGNMENT; }
 
-[+|-]*{DIGIT}+			{
+bool                    { yTRACE(BOOL_T); return BOOL_T; }
+{TF}                    { yTRACE(BOOL_C); return BOOL_C; }
+
+int                     { yTRACE(INT_T); return INT_T; }
+{SIGN}?{DIGIT}+			{
 					/*integer number*/
-					yTRACE(yytext);
+					yTRACE(INT_C);
 					yylval.as_int = atoi(yytext);
 #ifdef DEBUG_MODE
 					printf("[debug]yylval.as_int = %d\n", yylval.as_int);
@@ -44,13 +53,15 @@ else			{ yTRACE(ELSE); return ELSE; }
 					return INT_C;
 				}
 
-[+|-]*{DIGIT}*"."{DIGIT}+	{
+float                   { yTRACE(FLOAT_T); return FLOAT_T; }
+{SIGN}?{DIGIT}*"."{DIGIT}+	{
 					/*float number*/
 					yTRACE(yytext);
 					yylval.as_float = atof(yytext);
 #ifdef DEBUG_MODE
 					printf("[debug]yylval.as_float = %f\n", yylval.as_float);
 #endif
+                                        return FLOAT_C;
 				}
 
 {ID}			{
