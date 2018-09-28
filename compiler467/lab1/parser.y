@@ -63,6 +63,7 @@ extern int yyline;        /* variable holding current line number   */
 %token		myToken1 myToken2
 %token		WS
 %token		IF ELSE
+%token          WHILE
 
 %token          ASSIGNMENT
 %token          ADD
@@ -94,9 +95,10 @@ extern int yyline;        /* variable holding current line number   */
 
 %token		ID
 
-%token          VEC_T
 %token		CONST
 %token          SIGN
+%token          VEC_T
+%token          FUNC_ID
 %token          VOID_T
 %token		INT_T
 %token		INT_C
@@ -132,6 +134,7 @@ token
   |     myToken2
   |	IF
   |	ELSE
+  |     WHILE
   |	ASSIGNMENT
   |	ADD
   |	SUBTRACT
@@ -157,6 +160,7 @@ token
   |	SEMICOLON
   |	COMMA
   |     VEC_T
+  |     FUNC_ID
   |     ID
   |     CONST
   |     SIGN
@@ -167,9 +171,6 @@ token
   |	FLOAT_C
   |	BOOL_T
   |	BOOL_C
-
-
-
   ;
 
 

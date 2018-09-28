@@ -17,6 +17,7 @@
 #define yDEBUG(x)    { if (DEBUG_MODE) fprintf("%s", x); }
 
 int CheckInt(void);
+void bufCpy(char**, char*, int);
 int yyline = 1;
 
 %}
@@ -29,6 +30,7 @@ DIGIT                       [0-9]
 ID                          [a-zA-Z][a-zA-Z0-9]*
 TF                          (true|false)
 VEC                         (b|i)?(vec)[234]
+FUNC_NAME                   (lit|dp3|rsq)
 
 %%
 
@@ -36,6 +38,7 @@ VEC                         (b|i)?(vec)[234]
 
 if                          { yTRACE(IF); return IF; }
 else                        { yTRACE(ELSE); return ELSE; }
+while                       { yTRACE(WHILE); return WHILE; }
 
 "="                         { yTRACE(ASSIGNMENT); return ASSIGNMENT; }
 "+"                         { /*This should be an add operation*/ printf("ADD!: "); yTRACE(ADD); return ADD; }
@@ -94,15 +97,37 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                             }
 
 {VEC}                       {
-                                yTRACE(VEC_T);
+                                yTRACE(yytext);
+                                if (yylval.as_id == NULL) {
+                                #ifdef DEBUG_MODE
+                                    printf("[debug]yylval is not NULL\n");
+                                #endif
+                                    free(yylval.as_id);
+                                }
 
-                                yylval.as_id = yytext;
+                                bufCpy(&yylval.as_id, yytext, yyleng);
                             #ifdef DEBUG_MODE
-                                printf("[debug]yytext: %s\n", yytext);
+                                printf("[debug]vec yylval.as_id: %s\n", yylval.as_id);
                             #endif
                                 return VEC_T;
                             }
 
+{FUNC_NAME}                   {
+                                yTRACE(yytext);
+                                if (yylval.as_id == NULL) {
+                                #ifdef DEBUG_MODE
+                                    printf("[debug]func yylval is not NULL\n");
+                                #endif
+                                    free(yylval.as_id);
+                                }
+
+                                bufCpy(&yylval.as_id, yytext, yyleng);
+                            #ifdef DEBUG_MODE
+                                printf("[debug]func yylval.as_id: %s\n", yylval.as_id);
+                            #endif
+                                return FUNC_ID;
+
+                            }
 
 
 {ID}                        {
@@ -111,13 +136,14 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                                 //printf("yyleng is %d\n", yyleng);
                                 if (yylval.as_id == NULL) {
                                 #ifdef DEBUG_MODE
-                                    printf("[debug]yylval is not NULL\n");
+                                    printf("[debug]vec yylval is not NULL\n");
                                 #endif
                                     free(yylval.as_id);
                                 }
                                 //FIXME: potential mem leak
-                                yylval.as_id = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
-                                strcpy(yylval.as_id, yytext);
+                                //yylval.as_id = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
+                                //strcpy(yylval.as_id, yytext);
+                                bufCpy(&yylval.as_id, yytext, yyleng);
                             #ifdef DEBUG_MODE
                                 printf("[debug]yylval.as_id = %s\n", yylval.as_id);
                             #endif
@@ -137,4 +163,10 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 .                           { yERROR("Unknown token\n"); }
 
 %%
+
+void bufCpy(char** dest, char* src, int len) {
+    char buf[len + 1];
+    strcpy(buf, src);
+    *dest = buf;
+}
 
