@@ -94,6 +94,7 @@ extern int yyline;        /* variable holding current line number   */
 
 %token		ID
 
+%token          VEC_T
 %token		CONST
 %token          SIGN
 %token          VOID_T
@@ -155,6 +156,7 @@ token
   |	DOT
   |	SEMICOLON
   |	COMMA
+  |     VEC_T
   |     ID
   |     CONST
   |     SIGN
