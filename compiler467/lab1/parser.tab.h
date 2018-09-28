@@ -50,8 +50,40 @@ extern int yydebug;
     WS = 260,
     IF = 261,
     ELSE = 262,
-    ID = 263,
-    INT_C = 264
+    ASSIGNMENT = 263,
+    ADD = 264,
+    SUBTRACT = 265,
+    MULTIPLY = 266,
+    DIVIDE = 267,
+    POWER = 268,
+    NOT = 269,
+    EQUAL = 270,
+    NOTEQUAL = 271,
+    AND = 272,
+    OR = 273,
+    GT = 274,
+    GE = 275,
+    LT = 276,
+    LE = 277,
+    LPARENTHESES = 278,
+    RPARENTHESES = 279,
+    LBRACE = 280,
+    RBRACE = 281,
+    LBRACKET = 282,
+    RBRACKET = 283,
+    DOT = 284,
+    SEMICOLON = 285,
+    COMMA = 286,
+    ID = 287,
+    CONST = 288,
+    SIGN = 289,
+    VOID_T = 290,
+    INT_T = 291,
+    INT_C = 292,
+    FLOAT_T = 293,
+    FLOAT_C = 294,
+    BOOL_T = 295,
+    BOOL_C = 296
   };
 #endif
 /* Tokens.  */
@@ -60,8 +92,40 @@ extern int yydebug;
 #define WS 260
 #define IF 261
 #define ELSE 262
-#define ID 263
-#define INT_C 264
+#define ASSIGNMENT 263
+#define ADD 264
+#define SUBTRACT 265
+#define MULTIPLY 266
+#define DIVIDE 267
+#define POWER 268
+#define NOT 269
+#define EQUAL 270
+#define NOTEQUAL 271
+#define AND 272
+#define OR 273
+#define GT 274
+#define GE 275
+#define LT 276
+#define LE 277
+#define LPARENTHESES 278
+#define RPARENTHESES 279
+#define LBRACE 280
+#define RBRACE 281
+#define LBRACKET 282
+#define RBRACKET 283
+#define DOT 284
+#define SEMICOLON 285
+#define COMMA 286
+#define ID 287
+#define CONST 288
+#define SIGN 289
+#define VOID_T 290
+#define INT_T 291
+#define INT_C 292
+#define FLOAT_T 293
+#define FLOAT_C 294
+#define BOOL_T 295
+#define BOOL_C 296
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -76,7 +140,7 @@ union YYSTYPE
   char* as_id;
   char* as_keyword;
 
-#line 80 "y.tab.h" /* yacc.c:1909  */
+#line 144 "y.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

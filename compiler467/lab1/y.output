@@ -1,7 +1,6 @@
 Terminals unused in grammar
 
    WS
-   ID
 
 
 Grammar
@@ -17,7 +16,40 @@ Grammar
     5      | myToken2
     6      | IF
     7      | ELSE
-    8      | INT_C
+    8      | ASSIGNMENT
+    9      | ADD
+   10      | SUBTRACT
+   11      | MULTIPLY
+   12      | DIVIDE
+   13      | POWER
+   14      | NOT
+   15      | EQUAL
+   16      | NOTEQUAL
+   17      | AND
+   18      | OR
+   19      | GT
+   20      | GE
+   21      | LT
+   22      | LE
+   23      | LPARENTHESES
+   24      | RPARENTHESES
+   25      | LBRACE
+   26      | RBRACE
+   27      | LBRACKET
+   28      | RBRACKET
+   29      | DOT
+   30      | SEMICOLON
+   31      | COMMA
+   32      | ID
+   33      | CONST
+   34      | SIGN
+   35      | VOID_T
+   36      | INT_T
+   37      | INT_C
+   38      | FLOAT_T
+   39      | FLOAT_C
+   40      | BOOL_T
+   41      | BOOL_C
 
 
 Terminals, with rules where they appear
@@ -29,20 +61,54 @@ myToken2 (259) 5
 WS (260)
 IF (261) 6
 ELSE (262) 7
-ID (263)
-INT_C (264) 8
+ASSIGNMENT (263) 8
+ADD (264) 9
+SUBTRACT (265) 10
+MULTIPLY (266) 11
+DIVIDE (267) 12
+POWER (268) 13
+NOT (269) 14
+EQUAL (270) 15
+NOTEQUAL (271) 16
+AND (272) 17
+OR (273) 18
+GT (274) 19
+GE (275) 20
+LT (276) 21
+LE (277) 22
+LPARENTHESES (278) 23
+RPARENTHESES (279) 24
+LBRACE (280) 25
+RBRACE (281) 26
+LBRACKET (282) 27
+RBRACKET (283) 28
+DOT (284) 29
+SEMICOLON (285) 30
+COMMA (286) 31
+ID (287) 32
+CONST (288) 33
+SIGN (289) 34
+VOID_T (290) 35
+INT_T (291) 36
+INT_C (292) 37
+FLOAT_T (293) 38
+FLOAT_C (294) 39
+BOOL_T (295) 40
+BOOL_C (296) 41
 
 
 Nonterminals, with rules where they appear
 
-$accept (10)
+$accept (42)
     on left: 0
-program (11)
+program (43)
     on left: 1, on right: 0
-tokens (12)
+tokens (44)
     on left: 2 3, on right: 1 2
-token (13)
-    on left: 4 5 6 7 8, on right: 2
+token (45)
+    on left: 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+    24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41, on right:
+    2
 
 
 State 0
@@ -67,15 +133,48 @@ State 2
     1 program: tokens .
     2 tokens: tokens . token
 
-    myToken1  shift, and go to state 4
-    myToken2  shift, and go to state 5
-    IF        shift, and go to state 6
-    ELSE      shift, and go to state 7
-    INT_C     shift, and go to state 8
+    myToken1      shift, and go to state 4
+    myToken2      shift, and go to state 5
+    IF            shift, and go to state 6
+    ELSE          shift, and go to state 7
+    ASSIGNMENT    shift, and go to state 8
+    ADD           shift, and go to state 9
+    SUBTRACT      shift, and go to state 10
+    MULTIPLY      shift, and go to state 11
+    DIVIDE        shift, and go to state 12
+    POWER         shift, and go to state 13
+    NOT           shift, and go to state 14
+    EQUAL         shift, and go to state 15
+    NOTEQUAL      shift, and go to state 16
+    AND           shift, and go to state 17
+    OR            shift, and go to state 18
+    GT            shift, and go to state 19
+    GE            shift, and go to state 20
+    LT            shift, and go to state 21
+    LE            shift, and go to state 22
+    LPARENTHESES  shift, and go to state 23
+    RPARENTHESES  shift, and go to state 24
+    LBRACE        shift, and go to state 25
+    RBRACE        shift, and go to state 26
+    LBRACKET      shift, and go to state 27
+    RBRACKET      shift, and go to state 28
+    DOT           shift, and go to state 29
+    SEMICOLON     shift, and go to state 30
+    COMMA         shift, and go to state 31
+    ID            shift, and go to state 32
+    CONST         shift, and go to state 33
+    SIGN          shift, and go to state 34
+    VOID_T        shift, and go to state 35
+    INT_T         shift, and go to state 36
+    INT_C         shift, and go to state 37
+    FLOAT_T       shift, and go to state 38
+    FLOAT_C       shift, and go to state 39
+    BOOL_T        shift, and go to state 40
+    BOOL_C        shift, and go to state 41
 
     $default  reduce using rule 1 (program)
 
-    token  go to state 9
+    token  go to state 42
 
 
 State 3
@@ -115,12 +214,243 @@ State 7
 
 State 8
 
-    8 token: INT_C .
+    8 token: ASSIGNMENT .
 
     $default  reduce using rule 8 (token)
 
 
 State 9
+
+    9 token: ADD .
+
+    $default  reduce using rule 9 (token)
+
+
+State 10
+
+   10 token: SUBTRACT .
+
+    $default  reduce using rule 10 (token)
+
+
+State 11
+
+   11 token: MULTIPLY .
+
+    $default  reduce using rule 11 (token)
+
+
+State 12
+
+   12 token: DIVIDE .
+
+    $default  reduce using rule 12 (token)
+
+
+State 13
+
+   13 token: POWER .
+
+    $default  reduce using rule 13 (token)
+
+
+State 14
+
+   14 token: NOT .
+
+    $default  reduce using rule 14 (token)
+
+
+State 15
+
+   15 token: EQUAL .
+
+    $default  reduce using rule 15 (token)
+
+
+State 16
+
+   16 token: NOTEQUAL .
+
+    $default  reduce using rule 16 (token)
+
+
+State 17
+
+   17 token: AND .
+
+    $default  reduce using rule 17 (token)
+
+
+State 18
+
+   18 token: OR .
+
+    $default  reduce using rule 18 (token)
+
+
+State 19
+
+   19 token: GT .
+
+    $default  reduce using rule 19 (token)
+
+
+State 20
+
+   20 token: GE .
+
+    $default  reduce using rule 20 (token)
+
+
+State 21
+
+   21 token: LT .
+
+    $default  reduce using rule 21 (token)
+
+
+State 22
+
+   22 token: LE .
+
+    $default  reduce using rule 22 (token)
+
+
+State 23
+
+   23 token: LPARENTHESES .
+
+    $default  reduce using rule 23 (token)
+
+
+State 24
+
+   24 token: RPARENTHESES .
+
+    $default  reduce using rule 24 (token)
+
+
+State 25
+
+   25 token: LBRACE .
+
+    $default  reduce using rule 25 (token)
+
+
+State 26
+
+   26 token: RBRACE .
+
+    $default  reduce using rule 26 (token)
+
+
+State 27
+
+   27 token: LBRACKET .
+
+    $default  reduce using rule 27 (token)
+
+
+State 28
+
+   28 token: RBRACKET .
+
+    $default  reduce using rule 28 (token)
+
+
+State 29
+
+   29 token: DOT .
+
+    $default  reduce using rule 29 (token)
+
+
+State 30
+
+   30 token: SEMICOLON .
+
+    $default  reduce using rule 30 (token)
+
+
+State 31
+
+   31 token: COMMA .
+
+    $default  reduce using rule 31 (token)
+
+
+State 32
+
+   32 token: ID .
+
+    $default  reduce using rule 32 (token)
+
+
+State 33
+
+   33 token: CONST .
+
+    $default  reduce using rule 33 (token)
+
+
+State 34
+
+   34 token: SIGN .
+
+    $default  reduce using rule 34 (token)
+
+
+State 35
+
+   35 token: VOID_T .
+
+    $default  reduce using rule 35 (token)
+
+
+State 36
+
+   36 token: INT_T .
+
+    $default  reduce using rule 36 (token)
+
+
+State 37
+
+   37 token: INT_C .
+
+    $default  reduce using rule 37 (token)
+
+
+State 38
+
+   38 token: FLOAT_T .
+
+    $default  reduce using rule 38 (token)
+
+
+State 39
+
+   39 token: FLOAT_C .
+
+    $default  reduce using rule 39 (token)
+
+
+State 40
+
+   40 token: BOOL_T .
+
+    $default  reduce using rule 40 (token)
+
+
+State 41
+
+   41 token: BOOL_C .
+
+    $default  reduce using rule 41 (token)
+
+
+State 42
 
     2 tokens: tokens token .
 

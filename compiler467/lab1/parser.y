@@ -63,10 +63,40 @@ extern int yyline;        /* variable holding current line number   */
 %token		myToken1 myToken2
 %token		WS
 %token		IF ELSE
+
 %token          ASSIGNMENT
+%token          ADD
+%token		SUBTRACT
+%token		MULTIPLY
+%token		DIVIDE
+%token		POWER
+
+%token		NOT
+%token		EQUAL
+%token		NOTEQUAL
+%token		AND
+%token		OR
+%token		GT
+%token		GE
+%token		LT
+%token		LE
+
+%token		LPARENTHESES
+%token		RPARENTHESES
+%token		LBRACE
+%token		RBRACE
+%token		LBRACKET
+%token		RBRACKET
+
+%token		DOT
+%token		SEMICOLON
+%token		COMMA
+
 %token		ID
 
+%token		CONST
 %token          SIGN
+%token          VOID_T
 %token		INT_T
 %token		INT_C
 %token		FLOAT_T
@@ -102,8 +132,33 @@ token
   |	IF
   |	ELSE
   |	ASSIGNMENT
+  |	ADD
+  |	SUBTRACT
+  |	MULTIPLY
+  |	DIVIDE
+  |	POWER
+  |     NOT
+  |	EQUAL
+  |	NOTEQUAL
+  |     AND
+  |     OR
+  |     GT
+  |     GE
+  |     LT
+  |     LE
+  |	LPARENTHESES
+  |	RPARENTHESES
+  |	LBRACE
+  |	RBRACE
+  |	LBRACKET
+  |	RBRACKET
+  |	DOT
+  |	SEMICOLON
+  |	COMMA
   |     ID
+  |     CONST
   |     SIGN
+  |     VOID_T
   |	INT_T
   |	INT_C
   |	FLOAT_T

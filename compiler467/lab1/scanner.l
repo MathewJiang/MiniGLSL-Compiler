@@ -31,19 +31,49 @@ TF          (true|false)
 
 %%
 
-{WS}			{ return WS; }
+{WS}				{ /*FIXME: maybe waste of time*/ /*return WS;*/ }
 
-if			{ yTRACE(IF); return IF; }
+if				{ yTRACE(IF); return IF; }
+else				{ yTRACE(ELSE); return ELSE; }
 
-else			{ yTRACE(ELSE); return ELSE; }
+"="                       	{ yTRACE(ASSIGNMENT); return ASSIGNMENT; }
+"+"				{ /*This should be an add operation*/ printf("ADD!: "); yTRACE(ADD); return ADD; }
+"-"				{ /*This should be a subtract operation*/ printf("SUBTRACT!: "); yTRACE(SUBTRACT); return SUBTRACT; }
+"*"				{ /*This should be a multiply operation*/ printf("MULTIPLY!: "); yTRACE(MULTIPLY); return MULTIPLY; }
+"/"				{ /*This should be a divide operation*/ printf("DIVIDE!: "); yTRACE(DIVIDE); return DIVIDE; }
+"^"				{ /*This should be a power operation*/ printf("POWER!: "); yTRACE(POWER); return POWER; }
 
-=                       { yTRACE(ASSIGNMENT); return ASSIGNMENT; }
+"!"				{ yTRACE(NOT); return NOT; }
+"=="				{ yTRACE(EQUAL); return EQUAL; }
+"!="				{ yTRACE(NOTEQUAL); return NOTEQUAL; }
+"&&"				{ yTRACE(AND); return AND; }
+"||"				{ yTRACE(OR); return OR; }
+">"				{ yTRACE(GT); return GT; }
+">="				{ yTRACE(GE); return GE; }
+"<"				{ yTRACE(LT); return LT; }
+"<="				{ yTRACE(LE); return LE; }
 
-bool                    { yTRACE(BOOL_T); return BOOL_T; }
-{TF}                    { yTRACE(BOOL_C); return BOOL_C; }
+"("				{ yTRACE(LPARENTHESES); return LPARENTHESES; }
+")"				{ yTRACE(RPARENTHESES); return RPARENTHESES; }
+"{"				{ yTRACE(LBRACE); return LBRACE; }
+"}"				{ yTRACE(RBRACE); return RBRACE; }
+"["				{ yTRACE(LBRACKET); return LBRACKET; }
+"]"				{ yTRACE(RBRACKET); return RBRACKET; }
 
-int                     { yTRACE(INT_T); return INT_T; }
+"."				{ yTRACE(DOT); return DOT; }
+";"				{ yTRACE(SEMICOLON); return SEMICOLON; }
+","				{ yTRACE(COMMA); return COMMA; }
+
+const				{ yTRACE(CONST); return CONST; }
+void				{ yTRACE(VOID_T); return VOID_T; }
+bool                    	{ yTRACE(BOOL_T); return BOOL_T; }
+int                     	{ yTRACE(INT_T); return INT_T; }
+float                   	{ yTRACE(FLOAT_T); return FLOAT_T; }
+
+
+{TF}                    	{ yTRACE(BOOL_C); return BOOL_C; }
 {SIGN}?{DIGIT}+			{
+					/*FIXME: consider situation like 3+5*/
 					/*integer number*/
 					yTRACE(INT_C);
 					yylval.as_int = atoi(yytext);
@@ -52,11 +82,9 @@ int                     { yTRACE(INT_T); return INT_T; }
 #endif
 					return INT_C;
 				}
-
-float                   { yTRACE(FLOAT_T); return FLOAT_T; }
 {SIGN}?{DIGIT}*"."{DIGIT}+	{
 					/*float number*/
-					yTRACE(yytext);
+					yTRACE(FLOAT_C);
 					yylval.as_float = atof(yytext);
 #ifdef DEBUG_MODE
 					printf("[debug]yylval.as_float = %f\n", yylval.as_float);
@@ -64,38 +92,38 @@ float                   { yTRACE(FLOAT_T); return FLOAT_T; }
                                         return FLOAT_C;
 				}
 
-{ID}			{
-				/*identifier*/
-				yTRACE(yytext);
-				//printf("yyleng is %d\n", yyleng);
-				if (yylval.as_id == NULL) {
+
+
+{ID}				{
+					/*identifier*/
+					yTRACE(yytext);
+					//printf("yyleng is %d\n", yyleng);
+					if (yylval.as_id == NULL) {
 #ifdef DEBUG_MODE
-					printf("[debug]yylval is not NULL\n");
+						printf("[debug]yylval is not NULL\n");
 #endif
-					free(yylval.as_id);
+						free(yylval.as_id);
+					}
+					//FIXME: potential mem leak
+					yylval.as_id = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
+					strcpy(yylval.as_id, yytext);
+#ifdef DEBUG_MODE
+					printf("[debug]yylval.as_id = %s\n", yylval.as_id);
+#endif
+					return ID;
 				}
-				//FIXME: potential mem leak
-				yylval.as_id = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
-				strcpy(yylval.as_id, yytext);
-#ifdef DEBUG_MODE
-				printf("[debug]yylval.as_id = %s\n", yylval.as_id);
-#endif
-				return ID;
-			}
 
 
-{DIGIT}+{ID}		{
-				/*FIXME: hacky checking...*/
-				yERROR("Unsupported Identifier\n");
-			}
+{DIGIT}+{ID}			{
+					/*FIXME: hacky checking...*/
+					yERROR("Unsupported Identifier\n");
+				}
 
 
-[/*].*[*/]			{ yTRACE("Comment detected.\n"); }
-
-"!"				{ yTRACE("NOT op\n"); }
-"&&"|"||"|"=="|"!="|">"|">="|"<"|"<="		{ yTRACE("Conditional op\n");}
+"/*".*"*/"			{ /*FIXME: comment incorrect; work for /sdfs/ as well*/ yTRACE("Comment detected.\n"); printf("Comment detected\n");}
 
 
-.		{ yERROR("Unknown token\n"); }
+.				{ yERROR("Unknown token\n"); }
 
 %%
+
