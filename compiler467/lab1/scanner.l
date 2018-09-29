@@ -9,7 +9,12 @@
 #include "string.h"
 
 
-#define DEBUG_MODE = 1
+#define DEBUG_MODE 1
+#define MAX_INT 32767
+#define MIN_INT -32767
+#define MAX_FLOAT 1E37
+#define MIN_FLOAT -1E37
+
 #define YY_USER_INIT { yyin = inputFile; }
 #define	yyinput      input
 #define yTRACE(x)    { if (traceScanner) fprintf(traceFile, "TOKEN %3d : %s\n", x, yytext); }
@@ -23,7 +28,7 @@ int yyline = 1;
 %}
 %option noyywrap
 
-WS                          [ \t\n\v\r\f]
+WS                          [ \t\v\r\f]
 
 SIGN                        [+|-]
 DIGIT                       [0-9]
@@ -34,7 +39,8 @@ FUNC_NAME                   (lit|dp3|rsq)
 
 %%
 
-{WS}                        { /*FIXME: maybe waste of time*/ /*return WS;*/ }
+{WS}                        { /*FIXME: maybe waste of time if return*/ /*return WS;*/ }
+"\n"			    { ++yyline; }
 
 if                          { yTRACE(IF); return IF; }
 else                        { yTRACE(ELSE); return ELSE; }
@@ -68,7 +74,7 @@ while                       { yTRACE(WHILE); return WHILE; }
 ";"                         { yTRACE(SEMICOLON); return SEMICOLON; }
 ","                         { yTRACE(COMMA); return COMMA; }
 
-const                       { yTRACE(CONST); return CONST; }
+const                       { /*FIXME: may want to store in keywords*/yTRACE(CONST); return CONST; }
 void                        { yTRACE(VOID_T); return VOID_T; }
 bool                        { yTRACE(BOOL_T); return BOOL_T; }
 int                         { yTRACE(INT_T); return INT_T; }
@@ -79,30 +85,52 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 {SIGN}?{DIGIT}+             {
                                 /*FIXME: consider situation like 3+5*/
                                 /*integer number*/
-                                yTRACE(INT_C);
-                                yylval.as_int = atoi(yytext);
+				int temp = atoi(yytext);
+				if (temp > MAX_INT || temp < MIN_INT || yyleng > 6)
+					yERROR("Integer out of range\n");
+                                
+				int i = 0;
+				char c = yytext[0];
+				while (c == '+' || c == '-') {
+					i++;
+					c = yytext[i];
+				}
+				if (c == '0') {
+					yERROR("Octal representation not supported\n");
+				}
+
+				yTRACE(INT_C);
+				yylval.as_int = temp;
                             #ifdef DEBUG_MODE
                                 printf("[debug]yylval.as_int = %d\n", yylval.as_int);
                             #endif
                                 return INT_C;
                             }
 {SIGN}?{DIGIT}*"."{DIGIT}+  {
-                                /*float number*/
+                                /*float point number*/
+				float temp = atof(yytext);
+				if (temp > MAX_FLOAT || temp < MIN_FLOAT) {
+					yERROR("Float out of range\n");
+				}
+
                                 yTRACE(FLOAT_C);
-                                yylval.as_float = atof(yytext);
+                                yylval.as_float = temp;
                             #ifdef DEBUG_MODE
                                 printf("[debug]yylval.as_float = %f\n", yylval.as_float);
                             #endif
                                 return FLOAT_C;
                             }
 
+
 {VEC}                       {
-                                yTRACE(yytext);
-                                if (yylval.as_id == NULL) {
+				/*FIXME: Need to separate between vec2, vec3, etc*/
+				/*FIXME: also may store it in the keyword field*/
+                                yTRACE(VEC_T);
+                                if (yylval.as_id != NULL) {
                                 #ifdef DEBUG_MODE
                                     printf("[debug]yylval is not NULL\n");
                                 #endif
-                                    free(yylval.as_id);
+                                    //free(yylval.as_id);
                                 }
 
                                 bufCpy(&yylval.as_id, yytext, yyleng);
@@ -112,13 +140,15 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                                 return VEC_T;
                             }
 
-{FUNC_NAME}                   {
-                                yTRACE(yytext);
-                                if (yylval.as_id == NULL) {
+{FUNC_NAME}                 {
+				/*FIXME: do we need to check for func name length?*/
+				/*FIXME: !!!should this be a keyword??*/
+                                yTRACE(FUNC_ID);
+                                if (yylval.as_id != NULL) {
                                 #ifdef DEBUG_MODE
                                     printf("[debug]func yylval is not NULL\n");
                                 #endif
-                                    free(yylval.as_id);
+                                    //free(yylval.as_id);
                                 }
 
                                 bufCpy(&yylval.as_id, yytext, yyleng);
@@ -132,15 +162,19 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 
 {ID}                        {
                                 /*identifier*/
-                                yTRACE(yytext);
-                                //printf("yyleng is %d\n", yyleng);
-                                if (yylval.as_id == NULL) {
+                                yTRACE(ID);
+
+                                if (yylval.as_id != NULL) {
                                 #ifdef DEBUG_MODE
                                     printf("[debug]vec yylval is not NULL\n");
                                 #endif
-                                    free(yylval.as_id);
+                                    //free(yylval.as_id);
                                 }
-                                //FIXME: potential mem leak
+				if (yyleng > 32) {
+				    yERROR("ID length exceeds 32 bytes\n");
+				}
+				
+                                //FIXME: using normal array may cause stack overflow
                                 //yylval.as_id = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
                                 //strcpy(yylval.as_id, yytext);
                                 bufCpy(&yylval.as_id, yytext, yyleng);
@@ -153,12 +187,14 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 
 {DIGIT}+{ID}                {
                                 /*FIXME: hacky checking...*/
-                                yERROR("Unsupported Identifier\n");
+				
+                                yERROR("Identifiers should not start with numbers\n");
                             }
 
 
-"/*".*"*/"                  { /*FIXME: comment incorrect; work for /sdfs/ as well*/ yTRACE("Comment detected.\n"); printf("Comment detected\n");}
+"/*".*"*/"                  { /*FIXME: does longest matching rule works well*/ yTRACE("Comment detected.\n"); printf("Comment detected\n");}
 
+"/*".*			    { yERROR("Open comment without closing\n"); }
 
 .                           { yERROR("Unknown token\n"); }
 
