@@ -192,7 +192,7 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                             }
 
 
-"/*".*"*/"                  { /*FIXME: does longest matching rule works well*/ yTRACE("Comment detected.\n"); printf("Comment detected\n");}
+"/*".*"*/"                  { /*FIXME: does longest matching rule works well*/ printf("Comment detected\n");}
 
 "/*".*			    { yERROR("Open comment without closing\n"); }
 
