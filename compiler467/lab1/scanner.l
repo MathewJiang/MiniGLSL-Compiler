@@ -10,8 +10,6 @@
 
 
 #define DEBUG_MODE 1
-#define MAX_INT 32767
-#define MIN_INT -32767
 #define MAX_FLOAT 1E37
 #define MIN_FLOAT -1E37
 
@@ -32,7 +30,7 @@ WS                          [ \t\v\r\f]
 
 SIGN                        [+|-]
 DIGIT                       [0-9]
-ID                          [a-zA-Z][a-zA-Z0-9]*
+ID                          [a-zA-Z][a-zA-Z0-9_]*
 TF                          (true|false)
 VEC                         (b|i)?(vec)[234]
 FUNC_NAME                   (lit|dp3|rsq)
@@ -82,11 +80,11 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 
 
 {TF}                        { yTRACE(BOOL_C); return BOOL_C; }
-{SIGN}?{DIGIT}+             {
+{DIGIT}+             {
                                 /*FIXME: consider situation like 3+5*/
                                 /*integer number*/
 				int temp = atoi(yytext);
-				if (temp > MAX_INT || temp < MIN_INT || yyleng > 6)
+				if (temp > MAX_INTEGER || yyleng > 6)
 					yERROR("Integer out of range\n");
                                 
 				int i = 0;
@@ -106,36 +104,23 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                             #endif
                                 return INT_C;
                             }
-{SIGN}?{DIGIT}*"."{DIGIT}+  {
-                                /*float point number*/
-				float temp = atof(yytext);
-				if (temp > MAX_FLOAT || temp < MIN_FLOAT) {
-					yERROR("Float out of range\n");
-				}
 
-                                yTRACE(FLOAT_C);
-                                yylval.as_float = temp;
-                            #ifdef DEBUG_MODE
-                                printf("[debug]yylval.as_float = %f\n", yylval.as_float);
-                            #endif
-                                return FLOAT_C;
-                            }
 
 
 {VEC}                       {
 				/*FIXME: Need to separate between vec2, vec3, etc*/
 				/*FIXME: also may store it in the keyword field*/
                                 yTRACE(VEC_T);
-                                if (yylval.as_id != NULL) {
+                                if (yylval.as_keyword != NULL) {
                                 #ifdef DEBUG_MODE
                                     printf("[debug]yylval is not NULL\n");
                                 #endif
-                                    //free(yylval.as_id);
+                                    //free(yylval.as_keyword);
                                 }
 
-                                bufCpy(&yylval.as_id, yytext, yyleng);
+                                bufCpy(&yylval.as_keyword, yytext, yyleng);
                             #ifdef DEBUG_MODE
-                                printf("[debug]vec yylval.as_id: %s\n", yylval.as_id);
+                                printf("[debug]vec yylval.as_keyword: %s\n", yylval.as_keyword);
                             #endif
                                 return VEC_T;
                             }
@@ -170,13 +155,14 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                                 #endif
                                     //free(yylval.as_id);
                                 }
-				if (yyleng > 32) {
+				if (yyleng > MAX_IDENTIFIER) {
 				    yERROR("ID length exceeds 32 bytes\n");
 				}
 				
                                 //FIXME: using normal array may cause stack overflow
                                 //yylval.as_id = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
                                 //strcpy(yylval.as_id, yytext);
+                                printf("????????????yytext: %s", yytext);
                                 bufCpy(&yylval.as_id, yytext, yyleng);
                             #ifdef DEBUG_MODE
                                 printf("[debug]yylval.as_id = %s\n", yylval.as_id);
@@ -184,10 +170,35 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                                 return ID;
                             }
 
+{DIGIT}*("."{DIGIT}*)?([Ee]{SIGN}?{DIGIT}*("."{DIGIT}*)?)?  {
+                                /*float point number*/
+                                if (strstr(yytext, ".e") == yytext ||
+                                        strstr(yytext, ".E") == yytext) {
+                                    yERROR("Invalid float value.\n");
+                                }
+                                if (strrchr(yytext, 'e') == (yytext + yyleng - 1) ||
+                                        strrchr(yytext, 'E') == (yytext + yyleng - 1)) {
+                                    yERROR("Invalid float value.\n")
+                                }
+                                if ((strrchr(yytext, '.') && strrchr(yytext, 'e') && strrchr(yytext, '.') > strrchr(yytext, 'e')) ||
+                                         (strrchr(yytext, '.') && strrchr(yytext, 'E') && strrchr(yytext, '.') > strrchr(yytext, 'E'))) {
+                                    yERROR("Unsupported float value: exponent must be an integer.\n");
+                                }
+				float temp = atof(yytext);
+				if (temp > MAX_FLOAT) {
+					yERROR("Float out of range\n");
+				}
+
+                                yTRACE(FLOAT_C);
+                                yylval.as_float = temp;
+                            #ifdef DEBUG_MODE
+                                printf("[debug]yylval.as_float = %f\n", yylval.as_float);
+                            #endif
+                                return FLOAT_C;
+                            }
 
 {DIGIT}+{ID}                {
                                 /*FIXME: hacky checking...*/
-				
                                 yERROR("Identifiers should not start with numbers\n");
                             }
 
