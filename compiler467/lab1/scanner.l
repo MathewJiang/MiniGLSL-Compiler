@@ -9,7 +9,7 @@
 #include "string.h"
 
 
-#define DEBUG_MODE 1
+//#define DEBUG_MODE 0
 #define MAX_FLOAT 1E37
 #define MIN_FLOAT -1E37
 
@@ -22,6 +22,7 @@
 int CheckInt(void);
 void bufCpy(char**, char*, int);
 int yyline = 1;
+int print = 0;
 
 %}
 %option noyywrap
@@ -80,13 +81,15 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 
 
 {TF}                        { yTRACE(BOOL_C); return BOOL_C; }
-{DIGIT}+             {
+
+0+{DIGIT}+		    { yERROR("Octal representation not supported 0\n"); }
+{DIGIT}+             	    {
                                 /*FIXME: consider situation like 3+5*/
                                 /*integer number*/
 				int temp = atoi(yytext);
 				if (temp > MAX_INTEGER || yyleng > 6)
 					yERROR("Integer out of range\n");
-                                
+                                /*
 				int i = 0;
 				char c = yytext[0];
 				while (c == '+' || c == '-') {
@@ -94,8 +97,9 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 					c = yytext[i];
 				}
 				if (c == '0') {
+					if (i < )
 					yERROR("Octal representation not supported\n");
-				}
+				}*/
 
 				yTRACE(INT_C);
 				yylval.as_int = temp;
@@ -129,16 +133,16 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 				/*FIXME: do we need to check for func name length?*/
 				/*FIXME: !!!should this be a keyword??*/
                                 yTRACE(FUNC_ID);
-                                if (yylval.as_id != NULL) {
+                                if (yylval.as_keyword != NULL) {
                                 #ifdef DEBUG_MODE
                                     printf("[debug]func yylval is not NULL\n");
                                 #endif
-                                    //free(yylval.as_id);
+                                    //free(yylval.as_keyword);
                                 }
 
-                                bufCpy(&yylval.as_id, yytext, yyleng);
+                                bufCpy(&yylval.as_keyword, yytext, yyleng);
                             #ifdef DEBUG_MODE
-                                printf("[debug]func yylval.as_id: %s\n", yylval.as_id);
+                                printf("[debug]func yylval.as_keyword: %s\n", yylval.as_keyword);
                             #endif
                                 return FUNC_ID;
 
@@ -155,6 +159,7 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                                 #endif
                                     //free(yylval.as_id);
                                 }
+
 				if (yyleng > MAX_IDENTIFIER) {
 				    yERROR("ID length exceeds 32 bytes\n");
 				}
@@ -162,13 +167,17 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                                 //FIXME: using normal array may cause stack overflow
                                 //yylval.as_id = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
                                 //strcpy(yylval.as_id, yytext);
-                                printf("????????????yytext: %s", yytext);
                                 bufCpy(&yylval.as_id, yytext, yyleng);
                             #ifdef DEBUG_MODE
-                                printf("[debug]yylval.as_id = %s\n", yylval.as_id);
+				printf("[debug]yylval.as_id = %s\n", yylval.as_id);
+                                printf("\n");
                             #endif
                                 return ID;
                             }
+
+0+{DIGIT}+("."{DIGIT}*)?([Ee]{SIGN}?{DIGIT}*("."{DIGIT}*)?)? { yERROR("Octal representation not supported 1\n"); }
+
+{DIGIT}*("."{DIGIT}*)?([Ee]{SIGN}?0+{DIGIT}+("."{DIGIT}*)?)? { yERROR("Octal representation not supported 2\n"); }
 
 {DIGIT}*("."{DIGIT}*)?([Ee]{SIGN}?{DIGIT}*("."{DIGIT}*)?)?  {
                                 /*float point number*/
@@ -215,5 +224,11 @@ void bufCpy(char** dest, char* src, int len) {
     char buf[len + 1];
     strcpy(buf, src);
     *dest = buf;
+
+	//FIXME: 
+	if (!print) {
+    		printf("[debug]dest: %s\n", *dest);
+		print = 1;
+	}
 }
 
