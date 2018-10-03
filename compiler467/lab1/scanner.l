@@ -22,7 +22,7 @@
 int CheckInt(void);
 void bufCpy(char**, char*, int);
 int yyline = 1;
-int print = 0;
+char *global_str = NULL;
 
 %}
 %option noyywrap
@@ -46,11 +46,11 @@ else                        { yTRACE(ELSE); return ELSE; }
 while                       { yTRACE(WHILE); return WHILE; }
 
 "="                         { yTRACE(ASSIGNMENT); return ASSIGNMENT; }
-"+"                         { /*This should be an add operation*/ printf("ADD!: "); yTRACE(ADD); return ADD; }
-"-"                         { /*This should be a subtract operation*/ printf("SUBTRACT!: "); yTRACE(SUBTRACT); return SUBTRACT; }
-"*"                         { /*This should be a multiply operation*/ printf("MULTIPLY!: "); yTRACE(MULTIPLY); return MULTIPLY; }
-"/"                         { /*This should be a divide operation*/ printf("DIVIDE!: "); yTRACE(DIVIDE); return DIVIDE; }
-"^"                         { /*This should be a power operation*/ printf("POWER!: "); yTRACE(POWER); return POWER; }
+"+"                         { /*This should be an add operation*/ yTRACE(ADD); return ADD; }
+"-"                         { /*This should be a subtract operation*/ yTRACE(SUBTRACT); return SUBTRACT; }
+"*"                         { /*This should be a multiply operation*/ yTRACE(MULTIPLY); return MULTIPLY; }
+"/"                         { /*This should be a divide operation*/ yTRACE(DIVIDE); return DIVIDE; }
+"^"                         { /*This should be a power operation*/ yTRACE(POWER); return POWER; }
 
 "!"                         { yTRACE(NOT); return NOT; }
 "=="                        { yTRACE(EQUAL); return EQUAL; }
@@ -115,14 +115,16 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 				/*FIXME: Need to separate between vec2, vec3, etc*/
 				/*FIXME: also may store it in the keyword field*/
                                 yTRACE(VEC_T);
-                                if (yylval.as_keyword != NULL) {
+                                if (global_str != NULL) {
                                 #ifdef DEBUG_MODE
-                                    printf("[debug]yylval is not NULL\n");
+                                    printf("[debug]vec global_str is not NULL\n");
                                 #endif
-                                    //free(yylval.as_keyword);
+                                    free(global_str);
+				    global_str = NULL;
                                 }
-
-                                bufCpy(&yylval.as_keyword, yytext, yyleng);
+				global_str = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
+                                strcpy(global_str, yytext);
+				yylval.as_keyword = global_str;
                             #ifdef DEBUG_MODE
                                 printf("[debug]vec yylval.as_keyword: %s\n", yylval.as_keyword);
                             #endif
@@ -133,14 +135,16 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 				/*FIXME: do we need to check for func name length?*/
 				/*FIXME: !!!should this be a keyword??*/
                                 yTRACE(FUNC_ID);
-                                if (yylval.as_keyword != NULL) {
+                                if (global_str != NULL) {
                                 #ifdef DEBUG_MODE
-                                    printf("[debug]func yylval is not NULL\n");
+                                    printf("[debug]func global_str is not NULL\n");
                                 #endif
-                                    //free(yylval.as_keyword);
+                                    free(global_str);
+				    global_str = NULL;
                                 }
-
-                                bufCpy(&yylval.as_keyword, yytext, yyleng);
+				global_str = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
+                                strcpy(global_str, yytext);
+				yylval.as_keyword = global_str;
                             #ifdef DEBUG_MODE
                                 printf("[debug]func yylval.as_keyword: %s\n", yylval.as_keyword);
                             #endif
@@ -153,21 +157,23 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                                 /*identifier*/
                                 yTRACE(ID);
 
-                                if (yylval.as_id != NULL) {
-                                #ifdef DEBUG_MODE
-                                    printf("[debug]vec yylval is not NULL\n");
-                                #endif
-                                    //free(yylval.as_id);
-                                }
-
 				if (yyleng > MAX_IDENTIFIER) {
 				    yERROR("ID length exceeds 32 bytes\n");
 				}
 				
-                                //FIXME: using normal array may cause stack overflow
-                                //yylval.as_id = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
-                                //strcpy(yylval.as_id, yytext);
-                                bufCpy(&yylval.as_id, yytext, yyleng);
+
+                                if (global_str != NULL) {
+                                #ifdef DEBUG_MODE
+                                    printf("[debug]ID global_str is not NULL\n");
+                                #endif
+                                    free(global_str);
+				    global_str = NULL;
+                                }
+				global_str = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
+                                strcpy(global_str, yytext);
+				yylval.as_id = global_str;
+
+                                //bufCpy(&yylval.as_id, yytext, yyleng);
                             #ifdef DEBUG_MODE
 				printf("[debug]yylval.as_id = %s\n", yylval.as_id);
                                 printf("\n");
@@ -175,9 +181,12 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                                 return ID;
                             }
 
-0+{DIGIT}+("."{DIGIT}*)?([Ee]{SIGN}?{DIGIT}*("."{DIGIT}*)?)? { yERROR("Octal representation not supported 1\n"); }
 
-{DIGIT}*("."{DIGIT}*)?([Ee]{SIGN}?0+{DIGIT}+("."{DIGIT}*)?)? { yERROR("Octal representation not supported 2\n"); }
+0+{DIGIT}+("."{DIGIT}*)?[Ee]{SIGN}?{DIGIT}*("."{DIGIT}*)? { /*001e...*/yERROR("Octal representation not supported 1\n"); }
+
+{DIGIT}*("."{DIGIT}*)?[Ee]{SIGN}?0+{DIGIT}+("."{DIGIT}*)? { /*..e001*/yERROR("Octal representation not supported 2\n"); }
+
+0+{DIGIT}+("."{DIGIT}*)?   {/*00.0*/yERROR("Octal representation not supported 2\n"); }
 
 {DIGIT}*("."{DIGIT}*)?([Ee]{SIGN}?{DIGIT}*("."{DIGIT}*)?)?  {
                                 /*float point number*/
@@ -224,11 +233,7 @@ void bufCpy(char** dest, char* src, int len) {
     char buf[len + 1];
     strcpy(buf, src);
     *dest = buf;
-
-	//FIXME: 
-	if (!print) {
-    		printf("[debug]dest: %s\n", *dest);
-		print = 1;
-	}
+    printf("[debug]dest: %s\n", *dest);
+	
 }
 
