@@ -219,11 +219,9 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                                 /*FIXME: hacky checking...*/
                                 yERROR("Identifiers should not start with numbers\n");
                             }
+"/*"([^*]|("*"+[^/]))*"*/"  { printf("Comment detected: %s\n", yytext); }
 
-
-"/*".*"*/"                  { /*FIXME: does longest matching rule works well*/ printf("Comment detected\n");}
-
-"/*".*			    { yERROR("Open comment without closing\n"); }
+"/*"(("*"*[^/]))*	    { yERROR("Comment not matching\n");}
 
 .                           { yERROR("Unknown token\n"); }
 
