@@ -219,19 +219,38 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
                                 /*FIXME: hacky checking...*/
                                 yERROR("Identifiers should not start with numbers\n");
                             }
-"/*"([^*]|("*"+[^/]))*"*/"  { printf("Comment detected: %s\n", yytext); }
 
-"/*"(("*"*[^/]))*	    { yERROR("Comment not matching\n");}
+"/*"			    {
+				int c;
+				int isEnd = 0;
+				int isStar = 0;
+
+				while (!isEnd) {
+					c = input();
+					if (isStar && c == '/') {
+						printf("Comment detected\n");
+						isEnd = 1;
+						break;
+					} else {
+						if (c == '*') {
+							isStar = 1;
+						} else if (c == EOF || c == 0) {
+							isEnd = 1;
+							/*Note: always a '\n' char before EOF*/
+							yERROR("Comment without closing\n");
+							break;
+						} else if (c == '\n') {
+							isStar = 0;
+							++yyline;
+						} else {
+							isStar = 0;
+						}
+					}
+				}
+			    }
+
 
 .                           { yERROR("Unknown token\n"); }
 
 %%
-
-void bufCpy(char** dest, char* src, int len) {
-    char buf[len + 1];
-    strcpy(buf, src);
-    *dest = buf;
-    printf("[debug]dest: %s\n", *dest);
-	
-}
 
