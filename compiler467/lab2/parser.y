@@ -101,7 +101,7 @@ extern int yyline;        /* variable holding current line number   */
 %token          FUNC_ID
 %token          VOID_T
 %token		INT_T
-%token		INT_C
+%token<as_int>	INT_C
 %token		FLOAT_T
 %token		FLOAT_C
 %token		BOOL_T
@@ -113,8 +113,8 @@ extern int yyline;        /* variable holding current line number   */
 %left 		SUBTRACT ADD
 %left		MULTIPLY DIVIDE
 %right		POWER
-%left		'!''-'
-%left		'['']''('')'
+%left		NOT NEG
+%left		LBRACKET RBRACKET LPARENTHESES RPARENTHESES
 
 %start    program
 
@@ -149,10 +149,10 @@ statements
   ;
 
 declaration
-  :   type ID SEMICOLON				{ yTRACE("declaration -> type ID ;\n"); }
-  |   type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> type ID = expression ;\n"); }
+  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); }
+  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); }
   |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); }
-  |   /*epislon*/				{ yTRACE("declarations -> epislon\n"); }
+  |   /*epislon*/					{ yTRACE("declarations -> epislon\n"); }
   ;
 
 statement
@@ -173,15 +173,15 @@ type
   ;
 
 expression
-  :   constructor			{ yTRACE("expression -> constructor\n"); }
-  |   function				{ yTRACE("expression -> function\n"); }
-  |   INT_C				{ yTRACE("expression -> int_c\n"); }
-  |   FLOAT_C				{ yTRACE("expression -> float_c\n"); }
-  |   BOOL_C				{ yTRACE("expression -> bool_c\n"); }
-  |   variable				{ yTRACE("expression -> variable\n"); }
-  |   unary_op expression		{ yTRACE("expression -> unary_op expression\n"); }
-  |   expression binary_op expression	{ yTRACE("expression -> expression binary_op expression\n"); }
-  |   LBRACE expression RBRACE		{ yTRACE("(expression)\n"); }
+  :   constructor				{ yTRACE("expression -> constructor\n"); }
+  |   function					{ yTRACE("expression -> function\n"); }
+  |   INT_C					{ yTRACE("expression -> int_c\n"); printf("[debug]int is: %d\n", $1); }
+  |   FLOAT_C					{ yTRACE("expression -> float_c\n"); }
+  |   BOOL_C					{ yTRACE("expression -> bool_c\n"); }
+  |   variable					{ yTRACE("expression -> variable\n"); }
+  |   unary_op expression %prec NEG		{ yTRACE("expression -> unary_op expression\n"); }
+  |   expression binary_op expression		{ yTRACE("expression -> expression binary_op expression\n"); }
+  |   LPARENTHESES expression RPARENTHESES	{ yTRACE("(expression)\n"); }
   ;
 
 variable
@@ -204,7 +204,7 @@ constructor
   ;
 
 function
-  :   FUNC_ID LPARENTHESES arguments_opt RPARENTHESES	{ yTRACE("function -> func_id (arguments_opt)\n"); }
+  :   FUNC_ID LPARENTHESES arguments_opt RPARENTHESES	{ yTRACE("function -> func_id ( arguments_opt )\n"); }
   ;
 
 arguments_opt
