@@ -107,6 +107,14 @@ extern int yyline;        /* variable holding current line number   */
 %token		BOOL_T
 %token		BOOL_C
 
+%left		OR
+%left		AND
+%nonassoc	EQUAL NOTEQUAL GT GE LT LE
+%left 		SUBTRACT ADD
+%left		MULTIPLY DIVIDE
+%right		POWER
+%left		'!''-'
+%left		'['']''('')'
 
 %start    program
 
@@ -122,56 +130,92 @@ extern int yyline;        /* variable holding current line number   */
  *    1. Add code to rules for construction of AST.
  ***********************************************************************/
 program
-  :   tokens       
+  :   scope     			{ yTRACE("Program -> Scope\n"); }
+  |   /*epislon*/			{ yTRACE("Program -> epislon\n"); }
   ;
-tokens
-  :  tokens token  
-  |      
+
+scope
+  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n"); }
   ;
-// TODO: replace myToken with the token the you defined.
-token
-  :     myToken1 
-  |     myToken2
-  |	IF
-  |	ELSE
-  |     WHILE
-  |	ASSIGNMENT
-  |	ADD
-  |	SUBTRACT
-  |	MULTIPLY
-  |	DIVIDE
-  |	POWER
-  |     NOT
-  |	EQUAL
-  |	NOTEQUAL
-  |     AND
-  |     OR
-  |     GT
-  |     GE
-  |     LT
-  |     LE
-  |	LPARENTHESES
-  |	RPARENTHESES
-  |	LBRACE
-  |	RBRACE
-  |	LBRACKET
-  |	RBRACKET
-  |	DOT
-  |	SEMICOLON
-  |	COMMA
-  |     VEC_T
-  |     FUNC_ID
-  |     ID
-  |     CONST
-  |     SIGN
-  |     VOID_T
-  |	INT_T
-  |	INT_C
-  |	FLOAT_T
-  |	FLOAT_C
-  |	BOOL_T
-  |	BOOL_C
+
+declarations
+  :   declarations declaration		{ yTRACE("declarations -> declarations declarations\n"); }
+  |   /*epislon*/			{ yTRACE("declarations -> epislon\n"); }
   ;
+
+statements
+  :   statements statement		{ yTRACE("statements -> statements statement\n"); }
+  |   /*epislon*/			{ yTRACE("statements -> epislon\n"); }
+  ;
+
+declaration
+  :   type ID SEMICOLON				{ yTRACE("declaration -> type ID ;\n"); }
+  |   type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> type ID = expression ;\n"); }
+  |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); }
+  |   /*epislon*/				{ yTRACE("declarations -> epislon\n"); }
+  ;
+
+statement
+  :   variable ASSIGNMENT expression SEMICOLON				{ yTRACE("statment -> variable = expression ;\n"); }
+  |   IF LPARENTHESES expression RPARENTHESES statement else_statement	{ yTRACE("statement -> if (expression) statement else_statement\n"); }
+  |   WHILE LPARENTHESES expression RPARENTHESES statement		{ yTRACE("statement -> while (expression) statement\n"); }
+  |   scope								{ yTRACE("statement -> scope\n"); }
+  |   SEMICOLON								{ yTRACE("statement -> ;\n"); }
+  ;
+
+else_statement
+  :   ELSE statement			{ yTRACE("else_statement -> else statement\n"); }
+  |   /*epislon*/			{ yTRACE("else_statement -> epislon\n"); }
+  ;
+
+type
+  :   INT_T | FLOAT_T | BOOL_T | VEC_T	{ yTRACE("type -> int | float | bool | vec\n"); }
+  ;
+
+expression
+  :   constructor			{ yTRACE("expression -> constructor\n"); }
+  |   function				{ yTRACE("expression -> function\n"); }
+  |   INT_C				{ yTRACE("expression -> int_c\n"); }
+  |   FLOAT_C				{ yTRACE("expression -> float_c\n"); }
+  |   BOOL_C				{ yTRACE("expression -> bool_c\n"); }
+  |   variable				{ yTRACE("expression -> variable\n"); }
+  |   unary_op expression		{ yTRACE("expression -> unary_op expression\n"); }
+  |   expression binary_op expression	{ yTRACE("expression -> expression binary_op expression\n"); }
+  |   LBRACE expression RBRACE		{ yTRACE("(expression)\n"); }
+  ;
+
+variable
+  :   ID				{ yTRACE("variable -> ID\n"); }
+  |   ID LBRACKET INT_C RBRACKET	{ yTRACE("variable -> ID [ int_c ]\n"); }
+  ;
+
+unary_op
+  :   NOT | SUBTRACT			{ yTRACE("unary_op -> ! | -\n"); }
+  ;
+
+binary_op
+  :   AND | OR | EQUAL | NOTEQUAL | GT | GE		{ yTRACE("binary_op -> and | or | eq | noteq | gt | ge\n"); }
+  |   LT | LE | ADD | SUBTRACT | MULTIPLY | DIVIDE	{ yTRACE("binary_op -> lt | le | add | subtract | multiply | divide\n"); }
+  |   ASSIGNMENT | POWER				{ yTRACE("binary_op -> assignment | power\n"); } 
+  ;
+
+constructor
+  :   type LPARENTHESES arguments RPARENTHESES		{ yTRACE("constructor -> type ( arguments)\n"); }
+  ;
+
+function
+  :   FUNC_ID LPARENTHESES arguments_opt RPARENTHESES	{ yTRACE("function -> func_id (arguments_opt)\n"); }
+  ;
+
+arguments_opt
+  :   arguments				{ yTRACE("arguments_opt -> arguments\n"); }
+  |   /*epislon*/			{ yTRACE("arguments_opt -> epislon\n"); }
+  ;
+
+arguments
+  :   arguments COMMA expression	{ yTRACE("arguments -> arguments , expression\n"); }
+  |   expression			{ yTRACE("arguments -> expression\n"); }
+  ; 
 
 
 %%
