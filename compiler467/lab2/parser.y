@@ -175,7 +175,7 @@ type
 expression
   :   constructor				{ yTRACE("expression -> constructor\n"); }
   |   function					{ yTRACE("expression -> function\n"); }
-  |   INT_C					{ yTRACE("expression -> int_c\n"); printf("[debug]int is: %d\n", $1); }
+  |   INT_C					{ yTRACE("expression -> int_c\n"); /*printf("[debug]int is: %d\n", $1);*/ }
   |   FLOAT_C					{ yTRACE("expression -> float_c\n"); }
   |   BOOL_C					{ yTRACE("expression -> bool_c\n"); }
   |   variable					{ yTRACE("expression -> variable\n"); }
