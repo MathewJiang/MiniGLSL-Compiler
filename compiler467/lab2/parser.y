@@ -131,7 +131,6 @@ extern int yyline;        /* variable holding current line number   */
  ***********************************************************************/
 program
   :   scope     			{ yTRACE("Program -> Scope\n"); }
-  |   /*epislon*/			{ yTRACE("Program -> epislon\n"); }
   ;
 
 scope
@@ -140,19 +139,19 @@ scope
 
 declarations
   :   declarations declaration		{ yTRACE("declarations -> declarations declarations\n"); }
-  |   /*epislon*/			{ yTRACE("declarations -> epislon\n"); }
+  |   /*epsilon*/			{ yTRACE("declarations -> epsilon\n"); }
   ;
 
 statements
   :   statements statement		{ yTRACE("statements -> statements statement\n"); }
-  |   /*epislon*/			{ yTRACE("statements -> epislon\n"); }
+  |   /*epsilon*/			{ yTRACE("statements -> epsilon\n"); }
   ;
 
 declaration
   :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); }
   |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); }
   |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); }
-  |   /*epislon*/					{ yTRACE("declarations -> epislon\n"); }
+  |   /*epsilon*/					{ yTRACE("declarations -> epsilon\n"); }
   ;
 
 statement
@@ -165,7 +164,7 @@ statement
 
 else_statement
   :   ELSE statement			{ yTRACE("else_statement -> else statement\n"); }
-  |   /*epislon*/			{ yTRACE("else_statement -> epislon\n"); }
+  |   /*epsilon*/			{ yTRACE("else_statement -> epsilon\n"); }
   ;
 
 type
@@ -209,7 +208,7 @@ function
 
 arguments_opt
   :   arguments				{ yTRACE("arguments_opt -> arguments\n"); }
-  |   /*epislon*/			{ yTRACE("arguments_opt -> epislon\n"); }
+  |   /*epsilon*/			{ yTRACE("arguments_opt -> epsilon\n"); }
   ;
 
 arguments
