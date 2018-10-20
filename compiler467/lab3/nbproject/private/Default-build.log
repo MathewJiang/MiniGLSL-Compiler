@@ -1,0 +1,15 @@
+g++ -g -O0 -Wall   -c -o compiler467.o compiler467.c
+g++ -g -O0 -Wall   -c -o globalvars.o globalvars.c
+bison -dtvy parser.y 
+mv -f y.tab.c parser.c
+mv y.tab.h parser.tab.h
+flex  -t scanner.l > scanner.c
+g++ -g -O0 -Wall   -c -o scanner.o scanner.c
+<stdout>: In function 'int yy_get_next_buffer()':
+<stdout>:720:18: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+<stdout>:1502:3: note: in expansion of macro 'YY_INPUT'
+<stdout>: At global scope:
+<stdout>:1603:17: warning: 'void yyunput(int, char*)' defined but not used [-Wunused-function]
+g++ -g -O0 -Wall   -c -o parser.o parser.c
+g++   compiler467.o globalvars.o scanner.o parser.o   -o compiler467
+rm scanner.c
