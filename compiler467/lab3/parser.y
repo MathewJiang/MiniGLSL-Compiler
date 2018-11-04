@@ -94,7 +94,7 @@ extern int yyline;        /* variable holding current line number   */
 %token		SEMICOLON
 %token		COMMA
 
-%token		ID
+%token<as_id>		ID
 
 %token		CONST
 %token          SIGN
@@ -104,9 +104,9 @@ extern int yyline;        /* variable holding current line number   */
 %token		INT_T
 %token<as_int>	INT_C
 %token		FLOAT_T
-%token		FLOAT_C
+%token<as_float>		FLOAT_C
 %token		BOOL_T
-%token		BOOL_C
+%token<as_int>		BOOL_C
 
 %left		OR
 %left		AND
@@ -150,7 +150,7 @@ program
   ;
 
 scope
-  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n");}
+  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n"); $$ = ast_allocate(SCOPE_NODE, $2, $3); }
   ;
 
 declarations
@@ -189,32 +189,32 @@ type
 expression
   :   constructor				{ yTRACE("expression -> constructor\n"); }
   |   function					{ yTRACE("expression -> function\n"); }
-  |   INT_C					{ yTRACE("expression -> int_c\n"); /*printf("[debug]int is: %d\n", $1);*/ }
-  |   FLOAT_C					{ yTRACE("expression -> float_c\n"); }
-  |   BOOL_C					{ yTRACE("expression -> bool_c\n"); }
+  |   INT_C					{ yTRACE("expression -> int_c\n"); /*printf("[debug]int is: %d\n", $1);*/  $$ = ast_allocate(INT_NODE, $1);}
+  |   FLOAT_C					{ yTRACE("expression -> float_c\n"); $$ = ast_allocate(FLOAT_NODE, $1); }
+  |   BOOL_C					{ yTRACE("expression -> bool_c\n"); $$ = ast_allocate(BOOL_NODE, $1); }
   |   variable					{ yTRACE("expression -> variable\n"); }
-  |   NOT expression %prec NEG			{ yTRACE("expression -> NOT expression\n"); }
-  |   SUBTRACT expression %prec NEG		{ yTRACE("expression -> NEG expression\n"); }
-  |   expression AND expression			{ yTRACE("expression -> expression AND expression\n");}
-  |   expression OR expression			{ yTRACE("expression -> expression OR expression\n"); }
-  |   expression EQUAL expression		{ yTRACE("expression -> expression EQUAL expression\n"); }
-  |   expression NOTEQUAL expression		{ yTRACE("expression -> expression NOTEQUAL expression\n"); }
-  |   expression GT expression			{ yTRACE("expression -> expression GT expression\n"); }
-  |   expression GE expression			{ yTRACE("expression -> expression GE expression\n"); }
-  |   expression LT expression			{ yTRACE("expression -> expression LT expression\n"); }
-  |   expression LE expression			{ yTRACE("expression -> expression LE expression\n"); }
-  |   expression ADD expression			{ yTRACE("expression -> expression ADD expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, ADD, $1, $3);}
-  |   expression SUBTRACT expression		{ yTRACE("expression -> expression SUBTRACT expression\n"); }
-  |   expression MULTIPLY expression		{ yTRACE("expression -> expression MULTIPLY expression\n"); }
-  |   expression DIVIDE expression		{ yTRACE("expression -> expression DIVIDE expression\n"); }
-  |   expression ASSIGNMENT expression		{ yTRACE("expression -> expression ASSIGNMENT expression\n"); }
-  |   expression POWER expression		{ yTRACE("expression -> expression POWER expression\n"); }
+  |   NOT expression %prec NEG			{ yTRACE("expression -> NOT expression\n"); $$ = ast_allocate(UNARY_EXPRESSION_NODE, NOTEQUAL, $2); }
+  |   SUBTRACT expression %prec NEG		{ yTRACE("expression -> NEG expression\n"); $$ = ast_allocate(UNARY_EXPRESSION_NODE, SUBTRACT, $2); }
+  |   expression AND expression			{ yTRACE("expression -> expression AND expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, AND, $1, $3); }
+  |   expression OR expression			{ yTRACE("expression -> expression OR expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, OR, $1, $3); }
+  |   expression EQUAL expression		{ yTRACE("expression -> expression EQUAL expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, EQUAL, $1, $3); }
+  |   expression NOTEQUAL expression		{ yTRACE("expression -> expression NOTEQUAL expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, NOTEQUAL, $1, $3); }
+  |   expression GT expression			{ yTRACE("expression -> expression GT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, GT, $1, $3); }
+  |   expression GE expression			{ yTRACE("expression -> expression GE expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, GE, $1, $3); }
+  |   expression LT expression			{ yTRACE("expression -> expression LT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, LT, $1, $3); }
+  |   expression LE expression			{ yTRACE("expression -> expression LE expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, LE, $1, $3); }
+  |   expression ADD expression			{ yTRACE("expression -> expression ADD expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, ADD, $1, $3); }
+  |   expression SUBTRACT expression		{ yTRACE("expression -> expression SUBTRACT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, SUBTRACT, $1, $3); }
+  |   expression MULTIPLY expression		{ yTRACE("expression -> expression MULTIPLY expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, MULTIPLY, $1, $3); }
+  |   expression DIVIDE expression		{ yTRACE("expression -> expression DIVIDE expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, DIVIDE, $1, $3); }
+  |   expression ASSIGNMENT expression		{ yTRACE("expression -> expression ASSIGNMENT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, ASSIGNMENT, $1, $3); }
+  |   expression POWER expression		{ yTRACE("expression -> expression POWER expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, POWER, $1, $3); }
   |   LPARENTHESES expression RPARENTHESES	{ yTRACE("(expression)\n"); }
   ;
 
 variable
-  :   ID				{ yTRACE("variable -> ID\n"); }
-  |   ID LBRACKET INT_C RBRACKET	{ yTRACE("variable -> ID [ int_c ]\n"); }
+  :   ID				{ yTRACE("variable -> ID\n"); $$ = ast_allocate(VAR_NODE, $1, 0, -1); }
+  |   ID LBRACKET INT_C RBRACKET	{ yTRACE("variable -> ID [ int_c ]\n"); $$ = ast_allocate(VAR_NODE, $1, 1, $3); }
   ;
 
 constructor

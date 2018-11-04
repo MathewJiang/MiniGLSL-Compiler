@@ -3,6 +3,7 @@
 #define AST_H_ 1
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 // Dummy node just so everything compiles, create your own node/nodes
 //
@@ -24,7 +25,7 @@ typedef enum {
   SCOPE_NODE            = (1 << 0),
   
   EXPRESSION_NODE       = (1 << 2),
-  UNARY_EXPRESION_NODE  = (1 << 2) | (1 << 3),
+  UNARY_EXPRESSION_NODE  = (1 << 2) | (1 << 3),
   BINARY_EXPRESSION_NODE= (1 << 2) | (1 << 4),
   INT_NODE              = (1 << 2) | (1 << 5), 
   FLOAT_NODE            = (1 << 2) | (1 << 6),
@@ -38,6 +39,7 @@ typedef enum {
   WHILE_STATEMENT_NODE  = (1 << 1) | (1 << 12),
   ASSIGNMENT_NODE       = (1 << 1) | (1 << 13),
   NESTED_SCOPE_NODE     = (1 << 1) | (1 << 14),
+  BOOL_NODE             = (1 << 1) | (1 << 15),
 
   DECLARATION_NODE      = (1 << 15)
 } node_kind;
@@ -49,10 +51,11 @@ struct node_ {
 
   union {
     struct {
-      // declarations?
-      // statements?
+      node *declarations;
+      node *statements;
     } scope;
   
+
     struct {
       int op;
       node *right;
@@ -63,6 +66,16 @@ struct node_ {
       node *left;
       node *right;
     } binary_expr;
+
+	struct {
+	  char* id;
+	  bool is_vec;
+	  int vec_idx;
+    } var_node;
+
+	int int_val;
+	float float_val;
+	bool bool_val;
 
     // TODO: add more type of nodes
   };
