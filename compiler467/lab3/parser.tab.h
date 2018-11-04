@@ -86,7 +86,8 @@ extern int yydebug;
     FLOAT_T = 296,
     FLOAT_C = 297,
     BOOL_T = 298,
-    BOOL_C = 299
+    BOOL_C = 299,
+    NEG = 300
   };
 #endif
 /* Tokens.  */
@@ -132,6 +133,7 @@ extern int yydebug;
 #define FLOAT_C 297
 #define BOOL_T 298
 #define BOOL_C 299
+#define NEG 300
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -146,7 +148,7 @@ union YYSTYPE
   char* as_id;
   char* as_keyword;
 
-#line 150 "y.tab.h" /* yacc.c:1909  */
+#line 152 "y.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
