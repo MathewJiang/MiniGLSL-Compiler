@@ -29,6 +29,7 @@ node *ast_allocate(node_kind kind, ...) {
     ast->binary_expr.op = va_arg(args, int);
     ast->binary_expr.left = va_arg(args, node *);
     ast->binary_expr.right = va_arg(args, node *);
+	printf("Allocating binary exp node, op=%d\n", ast->binary_expr.op);
     break;
 
   // ...

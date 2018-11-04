@@ -16,7 +16,7 @@
 
 #include <string.h>
 #include "common.h"
-//#include "ast.h"
+#include "ast.h"
 //#include "symbol.h"
 //#include "semantic.h"
 #define YYERROR_VERBOSE
@@ -58,6 +58,7 @@ extern int yyline;        /* variable holding current line number   */
   
   char* as_id;
   char* as_keyword;
+  struct node_* as_node;
 }
 // TODO:Replace myToken with your tokens, you can use these tokens in flex
 %token		myToken1 myToken2
@@ -116,6 +117,21 @@ extern int yyline;        /* variable holding current line number   */
 %left		NOT NEG
 %left		LBRACKET RBRACKET LPARENTHESES RPARENTHESES
 
+%type<as_node> program
+%type<as_node> scope
+%type<as_node> declarations
+%type<as_node> statements
+%type<as_node> declaration
+%type<as_node> statement
+%type<as_node> else_statement
+%type<as_node> type
+%type<as_node> expression
+%type<as_node> variable
+%type<as_node> constructor
+%type<as_node> function
+%type<as_node> arguments_opt
+%type<as_node> arguments
+
 %start    program
 
 %%
@@ -134,7 +150,7 @@ program
   ;
 
 scope
-  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n"); }
+  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n");}
   ;
 
 declarations
@@ -179,7 +195,7 @@ expression
   |   variable					{ yTRACE("expression -> variable\n"); }
   |   NOT expression %prec NEG			{ yTRACE("expression -> NOT expression\n"); }
   |   SUBTRACT expression %prec NEG		{ yTRACE("expression -> NEG expression\n"); }
-  |   expression AND expression			{ yTRACE("expression -> expression AND expression\n"); }
+  |   expression AND expression			{ yTRACE("expression -> expression AND expression\n");}
   |   expression OR expression			{ yTRACE("expression -> expression OR expression\n"); }
   |   expression EQUAL expression		{ yTRACE("expression -> expression EQUAL expression\n"); }
   |   expression NOTEQUAL expression		{ yTRACE("expression -> expression NOTEQUAL expression\n"); }
@@ -187,7 +203,7 @@ expression
   |   expression GE expression			{ yTRACE("expression -> expression GE expression\n"); }
   |   expression LT expression			{ yTRACE("expression -> expression LT expression\n"); }
   |   expression LE expression			{ yTRACE("expression -> expression LE expression\n"); }
-  |   expression ADD expression			{ yTRACE("expression -> expression ADD expression\n"); }
+  |   expression ADD expression			{ yTRACE("expression -> expression ADD expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, ADD, $1, $3);}
   |   expression SUBTRACT expression		{ yTRACE("expression -> expression SUBTRACT expression\n"); }
   |   expression MULTIPLY expression		{ yTRACE("expression -> expression MULTIPLY expression\n"); }
   |   expression DIVIDE expression		{ yTRACE("expression -> expression DIVIDE expression\n"); }
