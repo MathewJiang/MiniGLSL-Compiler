@@ -36,7 +36,7 @@ typedef enum {
 
   STATEMENT_NODE        = (1 << 1),
   IF_STATEMENT_NODE     = (1 << 1) | (1 << 11),
-  WHILE_STATEMENT_NODE  = (1 << 1) | (1 << 12),
+  WHILE_STATEMENT_NODE  = (1 << 1) | (1 << 12),	/*ignored*/
   ASSIGNMENT_NODE       = (1 << 1) | (1 << 13),
   NESTED_SCOPE_NODE     = (1 << 1) | (1 << 14),
   BOOL_NODE             = (1 << 1) | (1 << 15),
@@ -54,12 +54,35 @@ struct node_ {
       node *declarations;
       node *statements;
     } scope;
-  
 
     struct {
-      int op;
-      node *right;
-    } unary_expr;
+      node* declarations;
+      node* declaration;
+    } declarations;
+
+    struct {
+      node* statements;
+      node* statement;
+    } statements;
+
+    struct {
+      node* type;
+      char* id;
+      bool is_const;
+      node* expr;
+    } declaration;
+
+    struct {
+      node* expr;
+      node* if_statement;
+      node* else_statement;
+    } if_statement_node;
+
+
+    struct {
+      node* var;
+      node* expr;
+    } assign_statement;
 
     struct {
       int op;
@@ -78,6 +101,26 @@ struct node_ {
 	bool bool_val;
 
     // TODO: add more type of nodes
+
+
+    struct {
+	node* type;
+	node* args;
+    } constructor;
+
+    struct {
+	char* func_id;
+	node* args;
+    } function;
+
+    struct {
+	node* args;
+	node* expr;
+    } args_node;
+
+    
+
+    
   };
 };
 

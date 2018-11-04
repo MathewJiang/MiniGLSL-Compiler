@@ -72,6 +72,10 @@ node *ast_allocate(node_kind kind, ...) {
     break;
 
   // ...
+  case FUNCTION_NODE:
+    ast->function.func_id = va_arg(args, char *);
+    ast->function.args = va_arg(args, node*);
+    debugP(VB_TRACE, "[ast_allocate]FUNCTION_NODE: func_id: %s\n", ast->function.func_id);
 
   default: break;
   }

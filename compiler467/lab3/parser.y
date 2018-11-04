@@ -15,6 +15,7 @@
  ***********************************************************************/
 
 #include <string.h>
+#include <stdbool.h>
 #include "common.h"
 #include "ast.h"
 //#include "symbol.h"
@@ -55,67 +56,68 @@ extern int yyline;        /* variable holding current line number   */
 %union {
   int as_int;
   float as_float;
+  bool as_bool;
   
   char* as_id;
   char* as_keyword;
   struct node_* as_node;
 }
 // TODO:Replace myToken with your tokens, you can use these tokens in flex
-%token		myToken1 myToken2
-%token		WS
-%token		IF ELSE
-%token          WHILE
+%token			myToken1 myToken2
+%token			WS
+%token			IF ELSE
+%token          	WHILE
 
-%token          ASSIGNMENT
-%token          ADD
-%token		SUBTRACT
-%token		MULTIPLY
-%token		DIVIDE
-%token		POWER
+%token          	ASSIGNMENT
+%token          	ADD
+%token			SUBTRACT
+%token			MULTIPLY
+%token			DIVIDE
+%token			POWER
 
-%token		NOT
-%token		EQUAL
-%token		NOTEQUAL
-%token		AND
-%token		OR
-%token		GT
-%token		GE
-%token		LT
-%token		LE
+%token			NOT
+%token			EQUAL
+%token			NOTEQUAL
+%token			AND
+%token			OR
+%token			GT
+%token			GE
+%token			LT
+%token			LE
 
-%token		LPARENTHESES
-%token		RPARENTHESES
-%token		LBRACE
-%token		RBRACE
-%token		LBRACKET
-%token		RBRACKET
+%token			LPARENTHESES
+%token			RPARENTHESES
+%token			LBRACE
+%token			RBRACE
+%token			LBRACKET
+%token			RBRACKET
 
-%token		DOT
-%token		SEMICOLON
-%token		COMMA
+%token			DOT
+%token			SEMICOLON
+%token			COMMA
 
 %token<as_id>		ID
 
-%token		CONST
-%token          SIGN
-%token          VEC_T
-%token          FUNC_ID
-%token          VOID_T
-%token		INT_T
-%token<as_int>	INT_C
-%token		FLOAT_T
-%token<as_float>		FLOAT_C
-%token		BOOL_T
-%token<as_int>		BOOL_C
+%token			CONST
+%token          	SIGN
+%token          	VEC_T
+%token<as_id>           FUNC_ID
+%token          	VOID_T
+%token			INT_T
+%token<as_int>		INT_C
+%token			FLOAT_T
+%token<as_float>	FLOAT_C
+%token			BOOL_T
+%token<as_bool>		BOOL_C
 
-%left		OR
-%left		AND
-%nonassoc	EQUAL NOTEQUAL GT GE LT LE
-%left 		SUBTRACT ADD
-%left		MULTIPLY DIVIDE
-%right		POWER
-%left		NOT NEG
-%left		LBRACKET RBRACKET LPARENTHESES RPARENTHESES
+%left			OR
+%left			AND
+%nonassoc		EQUAL NOTEQUAL GT GE LT LE
+%left 			SUBTRACT ADD
+%left			MULTIPLY DIVIDE
+%right			POWER
+%left			NOT NEG
+%left			LBRACKET RBRACKET LPARENTHESES RPARENTHESES
 
 %type<as_node> program
 %type<as_node> scope
@@ -222,7 +224,10 @@ constructor
   ;
 
 function
-  :   FUNC_ID LPARENTHESES arguments_opt RPARENTHESES	{ yTRACE("function -> func_id ( arguments_opt )\n"); }
+  :   FUNC_ID LPARENTHESES arguments_opt RPARENTHESES	{ yTRACE("function -> func_id ( arguments_opt )\n");
+                                                          printf("[debug]$1 is: %s\n", $1);
+                                                          $$ = ast_allocate(FUNCTION_NODE, $1, $3); 
+                                                        }
   ;
 
 arguments_opt
