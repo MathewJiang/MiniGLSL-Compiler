@@ -25,7 +25,7 @@ typedef enum {
   SCOPE_NODE            = (1 << 0),
   
   EXPRESSION_NODE       = (1 << 2),
-  UNARY_EXPRESSION_NODE  = (1 << 2) | (1 << 3),
+  UNARY_EXPRESSION_NODE = (1 << 2) | (1 << 3),
   BINARY_EXPRESSION_NODE= (1 << 2) | (1 << 4),
   INT_NODE              = (1 << 2) | (1 << 5), 
   FLOAT_NODE            = (1 << 2) | (1 << 6),
@@ -33,6 +33,7 @@ typedef enum {
   VAR_NODE              = (1 << 2) | (1 << 8),
   FUNCTION_NODE         = (1 << 2) | (1 << 9),
   CONSTRUCTOR_NODE      = (1 << 2) | (1 << 10),
+  TYPE_NODE             = (1 << 2) | (1 << 11),
 
   STATEMENT_NODE        = (1 << 1),
   IF_STATEMENT_NODE     = (1 << 1) | (1 << 11),
@@ -40,7 +41,9 @@ typedef enum {
   ASSIGNMENT_NODE       = (1 << 1) | (1 << 13),
   NESTED_SCOPE_NODE     = (1 << 1) | (1 << 14),
   BOOL_NODE             = (1 << 1) | (1 << 15),
+  STATEMENTS_NODE       = (1 << 1) | (1 << 16),
 
+  DECLARATIONS_NODE     = (1 << 14),
   DECLARATION_NODE      = (1 << 15)
 } node_kind;
 
@@ -66,11 +69,15 @@ struct node_ {
     } statements;
 
     struct {
+      int is_const;   //note: here (char == bool)
       node* type;
       char* id;
-      bool is_const;
       node* expr;
     } declaration;
+    
+//    struct {
+//      node* expression;
+//    }expression_node;
 
     struct {
       node* expr;
@@ -89,8 +96,13 @@ struct node_ {
       node *left;
       node *right;
     } binary_expr;
+    
+    struct {
+      int op;
+      node *right;
+    } unary_expr;
 
-	struct {
+    struct {
 	  char* id;
 	  bool is_vec;
 	  int vec_idx;
@@ -102,12 +114,11 @@ struct node_ {
 
     // TODO: add more type of nodes
 
-
     struct {
-	node* type;
+	char* type;
 	node* args;
     } constructor;
-
+    
     struct {
 	char* func_id;
 	node* args;
@@ -118,8 +129,10 @@ struct node_ {
 	node* expr;
     } args_node;
 
+    struct {
+        int type;
+    }type_node;
     
-
     
   };
 };

@@ -103,7 +103,7 @@ extern int yyline;        /* variable holding current line number   */
 %token          	VEC_T
 %token<as_id>           FUNC_ID
 %token          	VOID_T
-%token			INT_T
+%token          	INT_T
 %token<as_int>		INT_C
 %token			FLOAT_T
 %token<as_float>	FLOAT_C
@@ -148,27 +148,27 @@ extern int yyline;        /* variable holding current line number   */
  *    1. Add code to rules for construction of AST.
  ***********************************************************************/
 program
-  :   scope     			{ yTRACE("program -> scope\n"); }
+  :   scope                                     { yTRACE("program -> scope\n"); ast = $1; }
   ;
 
 scope
-  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n"); $$ = ast_allocate(SCOPE_NODE, $2, $3); }
+  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n"); if ($3 != NULL) {printf("statement not null\n");} $$ = ast_allocate(SCOPE_NODE, $2, $3); }
   ;
 
 declarations
-  :   declarations declaration		{ yTRACE("declarations -> declarations declaration\n"); }
-  |   /*epsilon*/			{ yTRACE("declarations -> epsilon\n"); }
+  :   declarations declaration                  { yTRACE("declarations -> declarations declaration\n"); $$ = ast_allocate(DECLARATIONS_NODE, $1, $2); }
+  |   /*epsilon*/                               { yTRACE("declarations -> epsilon\n"); $$ = NULL; }
   ;
 
 statements
-  :   statements statement		{ yTRACE("statements -> statements statement\n"); }
-  |   /*epsilon*/			{ yTRACE("statements -> epsilon\n"); }
+  :   statements statement                      { yTRACE("statements -> statements statement\n"); $$ = NULL;}
+  |   /*epsilon*/                               { yTRACE("statements -> epsilon\n"); $$ = NULL;}
   ;
 
 declaration
-  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); }
-  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); }
-  |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); }
+  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); }
+  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4); }
+  |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 1, $2, $3, $5); }
   ;
 
 statement
@@ -180,12 +180,15 @@ statement
   ;
 
 else_statement
-  :   ELSE statement			{ yTRACE("else_statement -> else statement\n"); }
-  |   /*epsilon*/			{ yTRACE("else_statement -> epsilon\n"); }
+  :   ELSE statement                            { yTRACE("else_statement -> else statement\n"); }
+  |   /*epsilon*/                               { yTRACE("else_statement -> epsilon\n"); }
   ;
 
 type
-  :   INT_T | FLOAT_T | BOOL_T | VEC_T	{ yTRACE("type -> int | float | bool | vec\n"); }
+  :   INT_T                                     { yTRACE("type -> int\n"); $$ = ast_allocate(TYPE_NODE, 1); }
+  |   FLOAT_T                                   { yTRACE("type -> float\n"); $$ = ast_allocate(TYPE_NODE, 2); }
+  |   BOOL_T                                    { yTRACE("type -> booln"); $$ = ast_allocate(TYPE_NODE, 3); }
+  |   VEC_T                                     { /*TODO: Phil - change VECT_T to VEC1_T, VEC2_t, etc.*/ yTRACE("type -> vec\n"); $$ = ast_allocate(TYPE_NODE, 4); }
   ;
 
 expression
@@ -215,29 +218,31 @@ expression
   ;
 
 variable
-  :   ID				{ yTRACE("variable -> ID\n"); $$ = ast_allocate(VAR_NODE, $1, 0, -1); }
-  |   ID LBRACKET INT_C RBRACKET	{ yTRACE("variable -> ID [ int_c ]\n"); $$ = ast_allocate(VAR_NODE, $1, 1, $3); }
+  :   ID                                        { yTRACE("variable -> ID\n"); $$ = ast_allocate(VAR_NODE, $1, 0, -1); }
+  |   ID LBRACKET INT_C RBRACKET                { yTRACE("variable -> ID [ int_c ]\n"); $$ = ast_allocate(VAR_NODE, $1, 1, $3); }
   ;
 
 constructor
-  :   type LPARENTHESES arguments RPARENTHESES		{ yTRACE("constructor -> type ( arguments)\n"); }
+  :   type LPARENTHESES arguments RPARENTHESES		{ yTRACE("constructor -> type ( arguments)\n"); 
+                                                          //$$ = ast_allocate(CONSTRUCTOR_NODE, $1, $3);
+                                                        }
   ;
 
 function
   :   FUNC_ID LPARENTHESES arguments_opt RPARENTHESES	{ yTRACE("function -> func_id ( arguments_opt )\n");
                                                           printf("[debug]$1 is: %s\n", $1);
-                                                          $$ = ast_allocate(FUNCTION_NODE, $1, $3); 
+                                                          //$$ = ast_allocate(FUNCTION_NODE, $1, $3); 
                                                         }
   ;
 
 arguments_opt
-  :   arguments				{ yTRACE("arguments_opt -> arguments\n"); }
-  |   /*epsilon*/			{ yTRACE("arguments_opt -> epsilon\n"); }
+  :   arguments                                 { yTRACE("arguments_opt -> arguments\n"); }
+  |   /*epsilon*/                               { yTRACE("arguments_opt -> epsilon\n"); }
   ;
 
 arguments
-  :   arguments COMMA expression	{ yTRACE("arguments -> arguments , expression\n"); }
-  |   expression			{ yTRACE("arguments -> expression\n"); }
+  :   arguments COMMA expression                { yTRACE("arguments -> arguments , expression\n"); }
+  |   expression                                { yTRACE("arguments -> expression\n"); }
   ; 
 
 
