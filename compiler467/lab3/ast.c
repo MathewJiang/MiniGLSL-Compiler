@@ -21,12 +21,10 @@ node *ast_allocate(node_kind kind, ...) {
     node *ast = (node *) malloc(sizeof (node));
     memset(ast, 0, sizeof *ast);
     ast->kind = kind;
-    char* temp_str = NULL;
 
     va_start(args, kind);
 
     switch (kind) {
-
         case SCOPE_NODE:
             ast->scope.declarations = va_arg(args, node *);
             ast->scope.statements = va_arg(args, node *);
@@ -54,10 +52,11 @@ node *ast_allocate(node_kind kind, ...) {
             ast->declaration.is_const = va_arg(args, int);
             ast->declaration.type = va_arg(args, node *);
 
-            temp_str = (char *) malloc(32 * sizeof (char));
-            strcpy(temp_str, va_arg(args, char *));
-            printf("[debug]ast->declaration.id: %s\n", temp_str);
-            ast->declaration.id = temp_str;
+//            temp_str = (char *) malloc(32 * sizeof (char));
+//            strcpy(temp_str, va_arg(args, char *));
+//            printf("[debug]ast->declaration.id: %s\n", temp_str);
+            ast->declaration.id = va_arg(args, char*);
+            printf("[debug]ast->declaration.id: %s\n", ast->declaration.id);
             ast->declaration.expr = va_arg(args, node *);
             debugP(VB_TRACE, "\tDECLARATION_NODE\n");
             break;
@@ -74,9 +73,9 @@ node *ast_allocate(node_kind kind, ...) {
             break;
 
         case TYPE_NODE:
-            temp_str = (char *) malloc(6 * sizeof (char));
-            strcpy(temp_str, va_arg(args, char*));
-            ast->type_node.type_name = temp_str;
+//            temp_str = (char *) malloc(6 * sizeof (char));
+//            strcpy(temp_str, va_arg(args, char*));
+            ast->type_node.type_name = va_arg(args, char *);
             ast->type_node.is_vec = va_arg(args, int);
             ast->type_node.vec_size = -1;
             if (ast->type_node.is_vec) {
@@ -117,9 +116,9 @@ node *ast_allocate(node_kind kind, ...) {
             break;
 
         case VAR_NODE:
-            temp_str = (char *) malloc(32 * sizeof (char));
-            strcpy(temp_str, va_arg(args, char*));
-            ast->var_node.id = temp_str;
+//            temp_str = (char *) malloc(32 * sizeof (char));
+//            strcpy(temp_str, va_arg(args, char*));
+            ast->var_node.id = va_arg(args, char*);
             ast->var_node.is_vec = va_arg(args, int);
             ast->var_node.vec_idx = (ast->var_node.is_vec) ? (va_arg(args, int)) : (-1);
             debugP(VB_TRACE, "Allocating var node with id=%s, is_vec=%d, vec_idx=%d\n",
@@ -141,19 +140,23 @@ node *ast_allocate(node_kind kind, ...) {
 
             // ...
         case FUNCTION_NODE:
-            temp_str = (char *) malloc(4 * sizeof (char));
-            strcpy(temp_str, va_arg(args, char*));
-            ast->function.func_id = temp_str;
+//            temp_str = (char *) malloc(4 * sizeof (char));
+//            strcpy(temp_str, va_arg(args, char*));
+            ast->function.func_id = va_arg(args, char*);
             ast->function.args = va_arg(args, node*);
             debugP(VB_TRACE, "[ast_allocate]FUNCTION_NODE: func_id: %s\n", ast->function.func_id);
             break;
 
-            //  case CONSTRUCTOR_NODE:
-            //    ast->constructor.type = va_arg(args, char*);
-            //    ast->constructor.args = va_arg(args, node*);
-            //    debugP(VB_TRACE, "[ast_allocate]CONSTRUCTOR_NODE: type: %s\n", ast->constructor.type);
-            //    break;
-
+        case CONSTRUCTOR_NODE:
+            ast->constructor.type = va_arg(args, node *);
+            ast->constructor.args = va_arg(args, node *);
+            debugP(VB_TRACE, "[ast_allocate]CONSTRUCTOR_NODE: type: %s\n", ast->constructor.type);
+            break;
+            
+        case ARGS_NODE:
+            ast->args_node.expr = va_arg(args, node *);
+            ast->args_node.args = va_arg(args, node *);
+            break;
 
         default: break;
     }
@@ -268,25 +271,10 @@ void ast_print_help(node *ast, int indent_num) {
             printf("(");
             printf("TYPE ");
             printf("%s", ast->type_node.type_name);
-            //            if (ast->type_node.type == 1) {
-            //                printf("INT ");
-            //            } else if (ast->type_node.type == 2) {
-            //                printf("FLOAT ");
-            //            } else if (ast->type_node.type == 3) {
-            //                printf("BOOL ");
-            //            } else if (ast->type_node.type == 4) {
-            //                printf("(INDEX ");
-            //                printf("\nvec1,2,3,4 not implemented\n");
-            //                exit(1);
-            //            } else {
-            //                perror("[error]TYPE_NODE undefined\n");
-            //                exit(1);
-            //            }
             printf(") ");
             break;
 
         case VAR_NODE:
-
             if (ast->var_node.is_vec) {
                 //print out the index if accessing array variable
                 printf("(INDEX ");
@@ -299,13 +287,22 @@ void ast_print_help(node *ast, int indent_num) {
             break;
 
         case INT_NODE:
-            printf("%d ", ast->int_val);
+            printf("%d", ast->int_val);
             break;
 
         case FLOAT_NODE:
-            printf("%f ", ast->float_val);
+            printf("%f", ast->float_val);
             break;
 
+        case BOOL_NODE:
+            //TODO: determine types for boolean variable
+            //so that "true" or "false" will be printed
+            if (ast->bool_val) {
+                printf("true");
+            } else {
+                printf("false");
+            }
+            break;
             //            
             //        case EXPRESSION_NODE: 
             //            break;
@@ -396,17 +393,6 @@ void ast_print_help(node *ast, int indent_num) {
             printf(")");
             break;
 
-
-        case BOOL_NODE:
-            //TODO: determine types for boolean variable
-            //so that "true" or "false" will be printed
-            if (ast->bool_val) {
-                printf("true ");
-            } else {
-                printf("false ");
-            }
-            break;
-
         case FUNCTION_NODE:
             indent(indent_num);
             printf("(CALL ");
@@ -425,8 +411,6 @@ void ast_print_help(node *ast, int indent_num) {
             //            break;
             //        case FUNCTION_NODE: 
             //            break;
-            //        case CONSTRUCTOR_NODE: 
-            //            break;
             //        case STATEMENT_NODE: 
             //            break;
             //        case IF_STATEMENT_NODE: 
@@ -439,8 +423,30 @@ void ast_print_help(node *ast, int indent_num) {
             //            break;
             //        case DECLARATION_NODE: 
             //            break;
+        case CONSTRUCTOR_NODE:
+            if (!ast->constructor.type) {
+                perror("\n[error]: constructor missing type\n");
+                exit(1);
+            }
+            printf("(%s CSTR ", ast->constructor.type->type_node.type_name);
+            ast_print_help(ast->constructor.args, indent_num);
+            printf(")");
+            break;
+        case ARGS_NODE:
+            if (ast->args_node.args) {
+                ast_print_help(ast->args_node.args, indent_num);
+                printf(", ");
+            }
+            printf("(ARG ");
+            if (!ast->args_node.expr) {
+                perror("\n[error]: argument missing value\n");
+                exit(1);
+            }
+            ast_print_help(ast->args_node.expr, indent_num);
+            printf(")");
+            break;
         default:
-            printf("[debug]default\n");
+            printf("[debug]AST Print: unknown AST node\n");
             break;
     }
 
@@ -474,7 +480,6 @@ void print_op(int op) {
         case POWER:
             printf("POWER ");
             break;
-
         case AND:
             printf("AND ");
             break;

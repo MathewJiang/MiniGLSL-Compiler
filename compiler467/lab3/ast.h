@@ -34,6 +34,8 @@ typedef enum {
   FUNCTION_NODE         = (1 << 2) | (1 << 9),
   CONSTRUCTOR_NODE      = (1 << 2) | (1 << 10),
   TYPE_NODE             = (1 << 2) | (1 << 11),
+  ARGS_NODE              = (1 << 2) | (1 << 12),
+
 
   STATEMENTS_NODE       = (1 << 1),
   IF_STATEMENT_NODE     = (1 << 1) | (1 << 11),
@@ -123,7 +125,7 @@ struct node_ {
     // TODO: add more type of nodes
 
     struct {
-	char* type;
+	node* type;
 	node* args;
     } constructor;
     

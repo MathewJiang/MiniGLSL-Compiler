@@ -166,7 +166,7 @@ statements
 
 declaration
   :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); printf("[declaration]id: %s\n", $2);}
-  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); printf("[declaration]id: %s\n", yylval.as_id); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4); }
+  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); printf("[declaration]id: %s\n", $2); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4); }
   |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 1, $2, $3, $5); }
   ;
 
@@ -223,9 +223,7 @@ variable
   ;
 
 constructor
-  :   type LPARENTHESES arguments RPARENTHESES		{ yTRACE("constructor -> type ( arguments)\n"); 
-                                                          //$$ = ast_allocate(CONSTRUCTOR_NODE, $1, $3);
-                                                        }
+  :   type LPARENTHESES arguments RPARENTHESES		{ yTRACE("constructor -> type ( arguments)\n"); $$ = ast_allocate(CONSTRUCTOR_NODE, $1, $3); }
   ;
 
 function
@@ -240,8 +238,8 @@ arguments_opt
   ;
 
 arguments
-  :   arguments COMMA expression                { yTRACE("arguments -> arguments , expression\n"); }
-  |   expression                                { yTRACE("arguments -> expression\n"); }
+  :   arguments COMMA expression                { yTRACE("arguments -> arguments , expression\n"); $$ = ast_allocate(ARGS_NODE, $3, $1); }
+  |   expression                                { yTRACE("arguments -> expression\n"); $$ = ast_allocate(ARGS_NODE, $1, NULL); }
   ; 
 
 
