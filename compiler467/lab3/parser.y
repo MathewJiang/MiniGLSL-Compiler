@@ -15,7 +15,6 @@
  ***********************************************************************/
 
 #include <string.h>
-#include <stdbool.h>
 #include "common.h"
 #include "ast.h"
 //#include "symbol.h"
@@ -100,7 +99,7 @@ extern int yyline;        /* variable holding current line number   */
 
 %token			CONST
 %token          	SIGN
-%token          	VEC_T
+%token<as_keyword>      VEC_T
 %token<as_id>           FUNC_ID
 %token          	VOID_T
 %token          	INT_T
@@ -152,7 +151,7 @@ program
   ;
 
 scope
-  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n"); if ($3 != NULL) {printf("statement not null\n");} $$ = ast_allocate(SCOPE_NODE, $2, $3); }
+  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n"); $$ = ast_allocate(SCOPE_NODE, $2, $3); }
   ;
 
 declarations
@@ -166,7 +165,7 @@ statements
   ;
 
 declaration
-  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); }
+  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); printf("[declaration]id: %s\n", $2);}
   |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4); }
   |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 1, $2, $3, $5); }
   ;
@@ -185,10 +184,10 @@ else_statement
   ;
 
 type
-  :   INT_T                                     { yTRACE("type -> int\n"); $$ = ast_allocate(TYPE_NODE, 1); }
-  |   FLOAT_T                                   { yTRACE("type -> float\n"); $$ = ast_allocate(TYPE_NODE, 2); }
-  |   BOOL_T                                    { yTRACE("type -> booln"); $$ = ast_allocate(TYPE_NODE, 3); }
-  |   VEC_T                                     { /*TODO: Phil - change VECT_T to VEC1_T, VEC2_t, etc.*/ yTRACE("type -> vec\n"); $$ = ast_allocate(TYPE_NODE, 4); }
+  :   INT_T                                     { yTRACE("type -> int\n"); $$ = ast_allocate(TYPE_NODE, "int", 0); }
+  |   FLOAT_T                                   { yTRACE("type -> float\n"); $$ = ast_allocate(TYPE_NODE, "float", 0); }
+  |   BOOL_T                                    { yTRACE("type -> bool\n"); $$ = ast_allocate(TYPE_NODE, "bool", 0); }
+  |   VEC_T                                     { yTRACE("type -> vec\n"); $$ = ast_allocate(TYPE_NODE, $1, 1); }
   ;
 
 expression

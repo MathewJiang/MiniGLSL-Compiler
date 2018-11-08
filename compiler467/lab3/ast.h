@@ -130,7 +130,9 @@ struct node_ {
     } args_node;
 
     struct {
-        int type;
+        char* type_name;
+        bool is_vec;
+        int vec_size;
     }type_node;
     
     
@@ -140,6 +142,9 @@ struct node_ {
 node *ast_allocate(node_kind type, ...);
 void ast_free(node *ast);
 void ast_print(node * ast);
+void ast_print_help(node *ast, int indent_num);
+void indent(int num);
+
 int semantic_check(node * ast);
 
 #endif /* AST_H_ */

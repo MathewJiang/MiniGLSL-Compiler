@@ -21,12 +21,11 @@ node *ast_allocate(node_kind kind, ...) {
   node *ast = (node *) malloc(sizeof(node));
   memset(ast, 0, sizeof *ast);
   ast->kind = kind;
+  char* temp_str = NULL;
 
   va_start(args, kind); 
 
   switch(kind) {
-  
-  // ...
 
  case SCOPE_NODE:
     ast->scope.declarations = va_arg(args, node *);
@@ -43,7 +42,11 @@ node *ast_allocate(node_kind kind, ...) {
  case DECLARATION_NODE:
      ast->declaration.is_const = va_arg(args, int);
      ast->declaration.type = va_arg(args, node *);
-     ast->declaration.id = va_arg(args, char *);
+     
+     temp_str = (char *)malloc(32 * sizeof(char));
+     strcpy(temp_str, va_arg(args, char *));
+     
+     ast->declaration.id = temp_str;
      ast->declaration.expr = va_arg(args, node *);
      debugP(VB_TRACE, "\tDECLARATION_NODE\n");
      break;
@@ -54,17 +57,28 @@ node *ast_allocate(node_kind kind, ...) {
      break;
  
  case TYPE_NODE:
-      ast->type_node.type = va_arg(args, int);    
+      temp_str = (char *) malloc(sizeof(char) * 6);
+      strcpy(temp_str, va_arg(args, char*));
+      ast->type_node.type_name = temp_str;
+      ast->type_node.is_vec = va_arg(args, int);
+      ast->type_node.vec_size = -1;
+      if (ast->type_node.is_vec) {
+          switch(ast->type_node.type_name[0]) {
+              case 'i': 
+                  ast->type_node.vec_size = ast->type_node.type_name[4] - '0';
+                  break;
+              case 'v': 
+                  ast->type_node.vec_size = ast->type_node.type_name[3] - '0';
+                  break;
+              case 'b': 
+                  ast->type_node.vec_size = ast->type_node.type_name[4] - '0';
+                  break;
+          }
+      }
+      
+      debugP(VB_TRACE, "Allocating type node with type=%s, is_vec=%d, vec_size=%d\n",
+              ast->type_node.type_name, ast->type_node.is_vec, ast->type_node.vec_size);
       break;
- 
- case VAR_NODE:
-     //TODO: do we need a type for the variable node?
-     ast->var_node.id = va_arg(args, char*);
-     ast->var_node.is_vec = va_arg(args, int);
-     ast->var_node.vec_idx = (ast->var_node.is_vec) ? (va_arg(args, int)) : (-1);
-     debugP(VB_TRACE, "Allocating var node with id=%s, is_vec=%d, vec_idx=%d\n",
-     ast->var_node.id, ast->var_node.is_vec, ast->var_node.vec_idx);
-     break;
      
  case INT_NODE:
     ast->int_val = va_arg(args, int);
@@ -125,39 +139,48 @@ void ast_free(node *ast) {
 void ast_print(node *ast) {
 
     //debugP(VB_TRACE, "\tEnter ast_print\n");
+    ast_print_help(ast, 0);
+}
+
+
+void ast_print_help(node *ast, int indent_num) {
     if (ast == NULL) {
         perror("ast is NULL\n");
         exit(1);
     }
     //printf("\n[debug]Enter ast_print\n");
     
+    indent_num++;
     node_kind kind = ast->kind;
     switch(kind){
         case SCOPE_NODE:
+            indent(indent_num);
             printf("(");
             printf("SCOPE ");
             if (ast->scope.declarations != NULL) {
-                ast_print(ast->scope.declarations);
+                ast_print_help(ast->scope.declarations, indent_num);
             }
             if (ast->scope.statements != NULL) {
-                ast_print(ast->scope.statements);
+                ast_print_help(ast->scope.statements, indent_num);
             }
             printf(")\n");
             break;
             
         case DECLARATIONS_NODE:
+            indent(indent_num);
             printf("(");
             printf("DECLARATIONS ");
             if (ast->declarations.declarations != NULL) {
-                ast_print(ast->declarations.declarations);
+                ast_print_help(ast->declarations.declarations, indent_num);
             }
             if (ast->declarations.declaration != NULL) {
-                ast_print(ast->declarations.declaration);
+                ast_print_help(ast->declarations.declaration, indent_num);
             }
             printf(")");
             break;
             
         case DECLARATION_NODE:
+            indent(indent_num);
             printf("(");
             printf("DECLARATION ");
             
@@ -166,37 +189,38 @@ void ast_print(node *ast) {
                 printf("%s ", ast->declaration.id);
             }
             
-            if (ast->declaration.is_const == (char)1) {
+            if (ast->declaration.is_const == 1) {
                 printf("CONST ");
             }
             if (ast->declaration.type != NULL) {
-                ast_print(ast->declaration.type);
+                ast_print_help(ast->declaration.type, indent_num);
             }
             
             if (ast->declaration.expr != NULL) {
-                ast_print(ast->declaration.expr);
+                ast_print_help(ast->declaration.expr, indent_num);
             }
             printf(")");
             break;
         
         case TYPE_NODE:
-//            printf("(");
-//            printf("TYPE ");
-            if (ast->type_node.type == 1) {
-                printf("INT ");
-            } else if (ast->type_node.type == 2) {
-                printf("FLOAT ");
-            } else if (ast->type_node.type == 3) {
-                printf("BOOL ");
-            } else if (ast->type_node.type == 4) {
-                printf("(INDEX ");
-                printf("\nvec1,2,3,4 not implemented\n");
-                exit(1);
-            } else {
-                perror("[error]TYPE_NODE undefined\n");
-                exit(1);
-            }
-//            printf(") ");
+            printf("(");
+            printf("TYPE ");
+            printf("%s", ast->type_node.type_name);
+//            if (ast->type_node.type == 1) {
+//                printf("INT ");
+//            } else if (ast->type_node.type == 2) {
+//                printf("FLOAT ");
+//            } else if (ast->type_node.type == 3) {
+//                printf("BOOL ");
+//            } else if (ast->type_node.type == 4) {
+//                printf("(INDEX ");
+//                printf("\nvec1,2,3,4 not implemented\n");
+//                exit(1);
+//            } else {
+//                perror("[error]TYPE_NODE undefined\n");
+//                exit(1);
+//            }
+            printf(") ");
             break;
             
         case VAR_NODE:
@@ -221,6 +245,7 @@ void ast_print(node *ast) {
 //        case UNARY_EXPRESSION_NODE: 
 //            break;
         case BINARY_EXPRESSION_NODE: 
+            indent(indent_num);
             printf("(BINARY ");
             
             //TODO: determine the resulting type afterwards 
@@ -232,14 +257,14 @@ void ast_print(node *ast) {
             }
             
             if (ast->binary_expr.left != NULL) {
-                ast_print(ast->binary_expr.left);
+                ast_print_help(ast->binary_expr.left, indent_num);
             } else {
                 perror("\n[error]lack of left operand for BINARY\n");
                 exit(1);
             }
             
             if (ast->binary_expr.right != NULL) {
-                ast_print(ast->binary_expr.right);
+                ast_print_help(ast->binary_expr.right, indent_num);
             } else {
                 perror("\n[error]lack of right operand for BINARY\n");
                 exit(1);
@@ -278,6 +303,13 @@ void ast_print(node *ast) {
       
 }
 
+
+void indent(int num) {
+    printf("\n");
+    for (int i = 0; i < num; i++) {
+        printf("\t");
+    }
+}
 
 void debugP(int verbose_flag, const char* str, ...) {
     if (!VB_GLOB || !verbose_flag) return;
