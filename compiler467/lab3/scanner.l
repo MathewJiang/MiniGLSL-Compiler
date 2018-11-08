@@ -22,7 +22,6 @@
 int CheckInt(void);
 void bufCpy(char**, char*, int);
 int yyline = 1;
-char *global_str = NULL;
 
 %}
 %option noyywrap
@@ -115,16 +114,17 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 				/*FIXME: Need to separate between vec2, vec3, etc*/
 				/*FIXME: also may store it in the keyword field*/
                                 yTRACE(VEC_T);
+                                /*
                                 if (global_str != NULL) {
                                 #ifdef DEBUG_MODE
                                     printf("[debug]vec global_str is not NULL\n");
                                 #endif
                                     free(global_str);
 				    global_str = NULL;
-                                }
-				global_str = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
-                                strcpy(global_str, yytext);
-				yylval.as_keyword = global_str;
+                                }*/
+				char * temp_str = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
+                                strcpy(temp_str, yytext);
+				yylval.as_id = temp_str;
                             #ifdef DEBUG_MODE
                                 printf("[debug]vec yylval.as_keyword: %s\n", yylval.as_keyword);
                             #endif
@@ -135,16 +135,17 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 				/*FIXME: do we need to check for func name length?*/
 				/*FIXME: !!!should this be a keyword??*/
                                 yTRACE(FUNC_ID);
+                                /*
                                 if (global_str != NULL) {
                                 #ifdef DEBUG_MODE
                                     printf("[debug]func global_str is not NULL\n");
                                 #endif
                                     free(global_str);
 				    global_str = NULL;
-                                }
-				global_str = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
-                                strcpy(global_str, yytext);
-				yylval.as_keyword = global_str;
+                                }*/
+				char * temp_str = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
+                                strcpy(temp_str, yytext);
+				yylval.as_keyword = temp_str;
                             #ifdef DEBUG_MODE
                                 printf("[debug]func yylval.as_keyword: %s\n", yylval.as_keyword);
                             #endif
@@ -161,17 +162,17 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 				    yERROR("ID length exceeds 32 bytes\n");
 				}
 				
-
+                                /*
                                 if (global_str != NULL) {
                                 #ifdef DEBUG_MODE
                                     printf("[debug]ID global_str is not NULL\n");
                                 #endif
                                     free(global_str);
 				    global_str = NULL;
-                                }
-				global_str = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
-                                strcpy(global_str, yytext);
-				yylval.as_id = global_str;
+                                }*/
+				char * temp_str = (char *)(malloc(sizeof(char)*(strlen(yytext)+1)));
+                                strcpy(temp_str, yytext);
+				yylval.as_id = temp_str;
 
                                 //bufCpy(&yylval.as_id, yytext, yyleng);
                             #ifdef DEBUG_MODE

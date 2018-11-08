@@ -100,7 +100,7 @@ extern int yyline;        /* variable holding current line number   */
 %token			CONST
 %token          	SIGN
 %token<as_keyword>      VEC_T
-%token<as_id>           FUNC_ID
+%token<as_keyword>      FUNC_ID
 %token          	VOID_T
 %token          	INT_T
 %token<as_int>		INT_C
@@ -165,13 +165,13 @@ statements
   ;
 
 declaration
-  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); }
-  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4); }
+  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); printf("[declaration]id: %s\n", $2);}
+  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); printf("[declaration]id: %s\n", yylval.as_id); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4); }
   |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 1, $2, $3, $5); }
   ;
 
 statement
-  :   variable ASSIGNMENT expression SEMICOLON				{ yTRACE("statment -> variable = expression ;\n"); $$ = ast_allocate(ASSIGNMENT_STATEMENT_NODE, $1, $3); }
+  :   variable ASSIGNMENT expression SEMICOLON				{ yTRACE("statment -> variable = expression ;\n"); printf("expression1=%p, expression2=%p\n", $1, $3); $$ = ast_allocate(ASSIGNMENT_STATEMENT_NODE, $1, $3); }
   |   IF LPARENTHESES expression RPARENTHESES statement else_statement	{ yTRACE("statement -> if (expression) statement else_statement\n"); $$ = ast_allocate(IF_STATEMENT_NODE, $3, $5, $6); }
   |   WHILE LPARENTHESES expression RPARENTHESES statement		{ yTRACE("statement -> while (expression) statement\n"); /* Ignore. */}
   |   scope								{ yTRACE("statement -> scope\n"); $$ = ast_allocate(NESTED_SCOPE_NODE, $1); }
@@ -211,13 +211,14 @@ expression
   |   expression SUBTRACT expression		{ yTRACE("expression -> expression SUBTRACT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, SUBTRACT, $1, $3); }
   |   expression MULTIPLY expression		{ yTRACE("expression -> expression MULTIPLY expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, MULTIPLY, $1, $3); }
   |   expression DIVIDE expression		{ yTRACE("expression -> expression DIVIDE expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, DIVIDE, $1, $3); }
-  |   expression ASSIGNMENT expression		{ yTRACE("expression -> expression ASSIGNMENT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, ASSIGNMENT, $1, $3); }
+//  |   expression ASSIGNMENT expression		{ yTRACE("expression -> expression ASSIGNMENT expression\n"); 
+//                                                                $$ = ast_allocate(BINARY_EXPRESSION_NODE, ASSIGNMENT, $1, $3); }
   |   expression POWER expression		{ yTRACE("expression -> expression POWER expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, POWER, $1, $3); }
   |   LPARENTHESES expression RPARENTHESES	{ yTRACE("(expression)\n"); }
   ;
 
 variable
-  :   ID                                        { yTRACE("variable -> ID\n"); $$ = ast_allocate(VAR_NODE, $1, 0, -1); }
+  :   ID                                        { yTRACE("variable -> ID\n"); printf("var id: %s\n", $1); $$ = ast_allocate(VAR_NODE, $1, 0, -1); }
   |   ID LBRACKET INT_C RBRACKET                { yTRACE("variable -> ID [ int_c ]\n"); $$ = ast_allocate(VAR_NODE, $1, 1, $3); }
   ;
 
@@ -229,8 +230,7 @@ constructor
 
 function
   :   FUNC_ID LPARENTHESES arguments_opt RPARENTHESES	{ yTRACE("function -> func_id ( arguments_opt )\n");
-                                                          //printf("[debug]$1 is: %s\n", $1);
-                                                          //$$ = ast_allocate(FUNCTION_NODE, $1, $3); 
+                                                          $$ = ast_allocate(FUNCTION_NODE, $1, $3); 
                                                         }
   ;
 

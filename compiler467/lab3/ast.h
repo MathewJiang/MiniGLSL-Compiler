@@ -112,7 +112,7 @@ struct node_ {
 
     struct {
 	  char* id;
-	  bool is_vec;
+	  int is_vec;
 	  int vec_idx;
     } var_node;
 
@@ -152,6 +152,7 @@ void ast_free(node *ast);
 void ast_print(node * ast);
 void ast_print_help(node *ast, int indent_num);
 void indent(int num);
+void print_op(int op);
 
 int semantic_check(node * ast);
 
