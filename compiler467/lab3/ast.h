@@ -35,13 +35,13 @@ typedef enum {
   CONSTRUCTOR_NODE      = (1 << 2) | (1 << 10),
   TYPE_NODE             = (1 << 2) | (1 << 11),
 
-  STATEMENT_NODE        = (1 << 1),
+  STATEMENTS_NODE       = (1 << 1),
   IF_STATEMENT_NODE     = (1 << 1) | (1 << 11),
   WHILE_STATEMENT_NODE  = (1 << 1) | (1 << 12),	/*ignored*/
-  ASSIGNMENT_NODE       = (1 << 1) | (1 << 13),
+  ASSIGNMENT_STATEMENT_NODE = (1 << 1) | (1 << 13),
   NESTED_SCOPE_NODE     = (1 << 1) | (1 << 14),
   BOOL_NODE             = (1 << 1) | (1 << 15),
-  STATEMENTS_NODE       = (1 << 1) | (1 << 16),
+  ELSE_STATEMENT_NODE   = (1 << 1) | (1 << 16),
 
   DECLARATIONS_NODE     = (1 << 14),
   DECLARATION_NODE      = (1 << 15)
@@ -84,6 +84,14 @@ struct node_ {
       node* if_statement;
       node* else_statement;
     } if_statement_node;
+    
+    struct {
+        node* else_statement;
+    } else_statement_node;
+    
+    struct {
+      node* scope;
+    } nested_scope;
 
 
     struct {

@@ -7,8 +7,8 @@
 #include "parser.tab.h"
 
 #define DEBUG_PRINT_TREE 0
-#define VB_GLOB 1
-#define VB_TRACE 1
+#define VB_GLOB 0
+#define VB_TRACE 0
 
 void debugP(int verbose_flag, const char* str, ...);
 
@@ -32,6 +32,11 @@ node *ast_allocate(node_kind kind, ...) {
     ast->scope.statements = va_arg(args, node *);
     debugP(VB_TRACE, "\tSCOPE_NODE\n");
     break;
+    
+  case NESTED_SCOPE_NODE:
+    ast->nested_scope.scope = va_arg(args, node *);
+    debugP(VB_TRACE, "\tNESTED_SCOPE_NODE\n");
+    break;
  
  case DECLARATIONS_NODE:
      ast->declarations.declarations = va_arg(args, node *);
@@ -39,21 +44,32 @@ node *ast_allocate(node_kind kind, ...) {
      debugP(VB_TRACE, "\tDECLARATIONS_NODE\n");
      break;
      
+  case STATEMENTS_NODE:
+      ast->statements.statements = va_arg(args, node *);
+      ast->statements.statement = va_arg(args, node *);
+      debugP(VB_TRACE, "\tDECLARATIONS_NODE\n");
+      break;
+     
  case DECLARATION_NODE:
      ast->declaration.is_const = va_arg(args, int);
      ast->declaration.type = va_arg(args, node *);
-     
-     temp_str = (char *)malloc(32 * sizeof(char));
-     strcpy(temp_str, va_arg(args, char *));
-     
+
+     temp_str = (char *) malloc(32*sizeof(char));
+     strcpy(temp_str, va_arg(args, char*));
      ast->declaration.id = temp_str;
      ast->declaration.expr = va_arg(args, node *);
      debugP(VB_TRACE, "\tDECLARATION_NODE\n");
+     debugP(VB_TRACE, "Declaration's type name is %s\n", ast->declaration.type->type_node.type_name);
      break;
  
- case ASSIGNMENT_NODE:
+ case ASSIGNMENT_STATEMENT_NODE:
      ast->assign_statement.var = va_arg(args, node *);
      ast->assign_statement.expr = va_arg(args, node *);
+     break;
+ case IF_STATEMENT_NODE:
+     ast->if_statement_node.if_statement = va_arg(args, node *);
+     ast->if_statement_node.expr = va_arg(args, node *);
+     ast->if_statement_node.else_statement = va_arg(args, node *);
      break;
  
  case TYPE_NODE:
@@ -96,6 +112,17 @@ node *ast_allocate(node_kind kind, ...) {
     break;
     
  
+ case VAR_NODE:
+    temp_str = (char *)malloc(32 * sizeof(char));
+    strcpy(temp_str, va_arg(args, char*));
+    ast->var_node.id = temp_str;
+    ast->var_node.is_vec = va_arg(args, int);
+    ast->var_node.vec_idx = (ast->var_node.is_vec) ? (va_arg(args, int)) : (-1);
+    debugP(VB_TRACE, "Allocating var node with id=%s, is_vec=%d, vec_idx=%d\n",
+    ast->var_node.id, ast->var_node.is_vec, ast->var_node.vec_idx);
+    break;  
+
+    
  case UNARY_EXPRESSION_NODE:
     ast->unary_expr.op = va_arg(args, int);
     ast->unary_expr.right = va_arg(args, node *);
@@ -166,6 +193,24 @@ void ast_print_help(node *ast, int indent_num) {
             printf(")\n");
             break;
             
+        case NESTED_SCOPE_NODE:
+            indent(indent_num);
+            printf("(");
+            printf("NESTED_SCOPE ");
+            if (!ast->nested_scope.scope) {
+                perror("\n[error]Nested scope: lacks scope\n");
+                exit(1);
+            }
+            
+            if (ast->nested_scope.scope->scope.declarations != NULL) {
+                ast_print_help(ast->nested_scope.scope->scope.declarations, indent_num);
+            }
+            if (ast->nested_scope.scope->scope.statements != NULL) {
+                ast_print_help(ast->nested_scope.scope->scope.statements, indent_num);
+            }
+            printf(")");
+            break;
+            
         case DECLARATIONS_NODE:
             indent(indent_num);
             printf("(");
@@ -198,6 +243,19 @@ void ast_print_help(node *ast, int indent_num) {
             
             if (ast->declaration.expr != NULL) {
                 ast_print_help(ast->declaration.expr, indent_num);
+            }
+            printf(")");
+            break;
+            
+        case STATEMENTS_NODE:
+            indent(indent_num);
+            printf("(");
+            printf("STATEMENTS ");
+            if (ast->statements.statements != NULL) {
+                ast_print_help(ast->statements.statements, indent_num);
+            }
+            if (ast->statements.statement != NULL) {
+                ast_print_help(ast->statements.statement, indent_num);
             }
             printf(")");
             break;
@@ -284,18 +342,52 @@ void ast_print_help(node *ast, int indent_num) {
 //            break;
 //        case CONSTRUCTOR_NODE: 
 //            break;
-//        case STATEMENT_NODE: 
-//            break;
-//        case IF_STATEMENT_NODE: 
-//            break;
-//        case ASSIGNMENT_NODE:     
-//            break;    
-//        case NESTED_SCOPE_NODE: 
-//            break;
-//        case BOOL_NODE:
-//            break;
-//        case DECLARATION_NODE: 
-//            break;
+        case IF_STATEMENT_NODE:
+            if (!ast->if_statement_node.if_statement) {
+                perror("\n[error]if statement node lack condition\n");
+                exit(1);
+            }
+            if (!ast->if_statement_node.expr) {
+                perror("\n[error]if statement node lack then expression\n");
+                exit(1);
+            }
+            indent(indent_num);
+            printf("(IF ");
+            ast_print_help(ast->if_statement_node.if_statement, indent_num);
+            ast_print_help(ast->if_statement_node.expr, indent_num);
+            if (ast->if_statement_node.else_statement)
+                ast_print_help(ast->if_statement_node.else_statement, indent_num);
+            printf(")");
+            
+            break;
+            
+        case ELSE_STATEMENT_NODE:
+            if (!ast->else_statement_node.else_statement) {
+                perror("\n[error]else statement node lack statement\n");
+                exit(1);
+            }
+            printf("ELSE ");
+            ast_print_help(ast->else_statement_node.else_statement, indent_num);
+            break;
+        case ASSIGNMENT_STATEMENT_NODE:
+            if (!ast->assign_statement.var) {
+                perror("\n[error]Assignment statement lack assignee name\n");
+                exit(1);
+            }
+            if (!ast->assign_statement.expr) {
+                perror("\n[error]Assignment statement lack assign value\n");
+                exit(1);
+            }
+            indent(indent_num);
+            printf("(ASSIGN ");
+            
+            //TODO: determine the resulting type afterwards 
+            printf("ANY ");
+            ast_print_help(ast->assign_statement.var, indent_num);
+            ast_print_help(ast->assign_statement.expr, indent_num);
+            printf(")");
+            break;
+
         default: 
             printf("[debug]default\n");
             break;

@@ -160,27 +160,27 @@ declarations
   ;
 
 statements
-  :   statements statement                      { yTRACE("statements -> statements statement\n"); $$ = NULL;}
+  :   statements statement                      { yTRACE("statements -> statements statement\n"); $$ = ast_allocate(STATEMENTS_NODE, $1, $2);}
   |   /*epsilon*/                               { yTRACE("statements -> epsilon\n"); $$ = NULL;}
   ;
 
 declaration
-  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); printf("[declaration]id: %s\n", $2);}
+  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); }
   |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4); }
   |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 1, $2, $3, $5); }
   ;
 
 statement
-  :   variable ASSIGNMENT expression SEMICOLON				{ yTRACE("statment -> variable = expression ;\n"); }
-  |   IF LPARENTHESES expression RPARENTHESES statement else_statement	{ yTRACE("statement -> if (expression) statement else_statement\n"); }
-  |   WHILE LPARENTHESES expression RPARENTHESES statement		{ yTRACE("statement -> while (expression) statement\n"); }
-  |   scope								{ yTRACE("statement -> scope\n"); }
+  :   variable ASSIGNMENT expression SEMICOLON				{ yTRACE("statment -> variable = expression ;\n"); $$ = ast_allocate(ASSIGNMENT_STATEMENT_NODE, $1, $3); }
+  |   IF LPARENTHESES expression RPARENTHESES statement else_statement	{ yTRACE("statement -> if (expression) statement else_statement\n"); $$ = ast_allocate(IF_STATEMENT_NODE, $3, $5, $6); }
+  |   WHILE LPARENTHESES expression RPARENTHESES statement		{ yTRACE("statement -> while (expression) statement\n"); /* Ignore. */}
+  |   scope								{ yTRACE("statement -> scope\n"); $$ = ast_allocate(NESTED_SCOPE_NODE, $1); }
   |   SEMICOLON								{ yTRACE("statement -> ;\n"); }
   ;
 
 else_statement
-  :   ELSE statement                            { yTRACE("else_statement -> else statement\n"); }
-  |   /*epsilon*/                               { yTRACE("else_statement -> epsilon\n"); }
+  :   ELSE statement                            { yTRACE("else_statement -> else statement\n"); $$ = ast_allocate(ELSE_STATEMENT_NODE, $2); }
+  |   /*epsilon*/                               { yTRACE("else_statement -> epsilon\n"); $$ = NULL; }
   ;
 
 type
@@ -229,7 +229,7 @@ constructor
 
 function
   :   FUNC_ID LPARENTHESES arguments_opt RPARENTHESES	{ yTRACE("function -> func_id ( arguments_opt )\n");
-                                                          printf("[debug]$1 is: %s\n", $1);
+                                                          //printf("[debug]$1 is: %s\n", $1);
                                                           //$$ = ast_allocate(FUNCTION_NODE, $1, $3); 
                                                         }
   ;
