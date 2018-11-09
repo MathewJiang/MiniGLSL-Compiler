@@ -367,7 +367,9 @@ void ast_print_help(node *ast, int indent_num) {
             indent(indent_num);
             printf("(IF ");
             ast_print_help(ast->if_statement_node.if_statement, indent_num);
-            ast_print_help(ast->if_statement_node.expr, indent_num);
+            if (ast->if_statement_node.expr) {
+                ast_print_help(ast->if_statement_node.expr, indent_num);
+            }
             if (ast->if_statement_node.else_statement)
                 ast_print_help(ast->if_statement_node.else_statement, indent_num);
             printf(")");
