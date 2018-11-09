@@ -1,5 +1,5 @@
 {
-	int i = 0;
-	const int i = j;
-	int j = 0;
+	if (1);
+	if (2);
+	else i = 1;
 }

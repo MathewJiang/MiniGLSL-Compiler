@@ -165,8 +165,8 @@ statements
   ;
 
 declaration
-  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); printf("[declaration]id: %s\n", $2);}
-  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); printf("[declaration]id: %s\n", $2); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4); }
+  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); }
+  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4); }
   |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 1, $2, $3, $5); }
   ;
 
@@ -179,7 +179,7 @@ statement
   ;
 
 else_statement
-  :   ELSE statement                            { yTRACE("else_statement -> else statement\n"); printf("[parser.y]else statement: %p\n", $2); $$ = ast_allocate(ELSE_STATEMENT_NODE, $2); }
+  :   ELSE statement                            { yTRACE("else_statement -> else statement\n"); $$ = ast_allocate(ELSE_STATEMENT_NODE, $2); }
   |   /*epsilon*/                               { yTRACE("else_statement -> epsilon\n"); $$ = NULL; }
   ;
 
@@ -218,7 +218,7 @@ expression
   ;
 
 variable
-  :   ID                                        { yTRACE("variable -> ID\n"); printf("var id: %s\n", $1); $$ = ast_allocate(VAR_NODE, $1, 0, -1); }
+  :   ID                                        { yTRACE("variable -> ID\n"); $$ = ast_allocate(VAR_NODE, $1, 0, -1); }
   |   ID LBRACKET INT_C RBRACKET                { yTRACE("variable -> ID [ int_c ]\n"); $$ = ast_allocate(VAR_NODE, $1, 1, $3); }
   ;
 

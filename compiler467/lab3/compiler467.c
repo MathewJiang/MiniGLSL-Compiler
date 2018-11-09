@@ -24,6 +24,7 @@
 
 /* Phases 3,4: Uncomment following includes as needed */
 #include "ast.h"
+#include "semantic.h"
 //#include "codegen.h"
 
 /***********************************************************************
@@ -87,6 +88,8 @@ int main (int argc, char *argv[]) {
     return 0; // parse failed
   }
 
+  ast_semantic_check(ast);
+  
 /* Phase 3: Call the AST dumping routine if requested */
   if (dumpAST)
     ast_print(ast);

@@ -73,9 +73,7 @@ node *ast_allocate(node_kind kind, ...) {
             break;
             
         case ELSE_STATEMENT_NODE:
-            printf("[debug]else_statement_node\n");
             ast->else_statement_node.else_statement = va_arg(args, node *);
-            printf("%p\n", ast->else_statement_node.else_statement);
             break;
 
         case TYPE_NODE:
@@ -436,6 +434,7 @@ void ast_print_help(node *ast, int indent_num) {
             //            break;
             //        case DECLARATION_NODE: 
             //            break;
+            
         case CONSTRUCTOR_NODE:
             if (!ast->constructor.type) {
                 perror("\n[error]: constructor missing type\n");
@@ -445,6 +444,7 @@ void ast_print_help(node *ast, int indent_num) {
             ast_print_help(ast->constructor.args, indent_num);
             printf(")");
             break;
+            
         case ARGS_NODE:
             if (ast->args_node.args) {
                 ast_print_help(ast->args_node.args, indent_num);
@@ -458,6 +458,7 @@ void ast_print_help(node *ast, int indent_num) {
             ast_print_help(ast->args_node.expr, indent_num);
             printf(")");
             break;
+            
         default:
             printf("[debug]AST Print: unknown AST node\n");
             break;
