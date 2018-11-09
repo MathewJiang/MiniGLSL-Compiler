@@ -45,7 +45,7 @@ node *ast_allocate(node_kind kind, ...) {
         case STATEMENTS_NODE:
             ast->statements.statements = va_arg(args, node *);
             ast->statements.statement = va_arg(args, node *);
-            debugP(VB_TRACE, "\tDECLARATIONS_NODE\n");
+            debugP(VB_TRACE, "\tSTATEMENTS_NODE\n");
             break;
 
         case DECLARATION_NODE:
@@ -70,6 +70,12 @@ node *ast_allocate(node_kind kind, ...) {
             ast->if_statement_node.if_statement = va_arg(args, node *);
             ast->if_statement_node.expr = va_arg(args, node *);
             ast->if_statement_node.else_statement = va_arg(args, node *);
+            break;
+            
+        case ELSE_STATEMENT_NODE:
+            printf("[debug]else_statement_node\n");
+            ast->else_statement_node.else_statement = va_arg(args, node *);
+            printf("%p\n", ast->else_statement_node.else_statement);
             break;
 
         case TYPE_NODE:
@@ -179,9 +185,12 @@ void ast_print(node *ast) {
 
 void ast_print_help(node *ast, int indent_num) {
     if (ast == NULL) {
-        perror("ast is NULL\n");
-        exit(1);
+        return;
     }
+//    if (ast == NULL) {
+//        perror("ast is NULL\n");
+//        exit(1);
+//    }
     //printf("\n[debug]Enter ast_print\n");
 
     indent_num++;
@@ -291,7 +300,7 @@ void ast_print_help(node *ast, int indent_num) {
             break;
 
         case FLOAT_NODE:
-            printf("%f", ast->float_val);
+            printf("%.2lf", ast->float_val);
             break;
 
         case BOOL_NODE:
@@ -351,10 +360,10 @@ void ast_print_help(node *ast, int indent_num) {
                 perror("\n[error]if statement node lack condition\n");
                 exit(1);
             }
-            if (!ast->if_statement_node.expr) {
-                perror("\n[error]if statement node lack then expression\n");
-                exit(1);
-            }
+//            if (!ast->if_statement_node.expr) {
+//                perror("\n[error]if statement node lack then expression\n");
+//                exit(1);
+//            }
             indent(indent_num);
             printf("(IF ");
             ast_print_help(ast->if_statement_node.if_statement, indent_num);
@@ -366,12 +375,14 @@ void ast_print_help(node *ast, int indent_num) {
             break;
             
         case ELSE_STATEMENT_NODE:
-            if (!ast->else_statement_node.else_statement) {
-                perror("\n[error]else statement node lack statement\n");
-                exit(1);
-            }
-            printf("ELSE ");
+//            if (!ast->else_statement_node.else_statement) {
+//                perror("\n[error]else statement node lack statement\n");
+//                exit(1);
+//            }
+            indent(indent_num);
+            printf(" (ELSE ");
             ast_print_help(ast->else_statement_node.else_statement, indent_num);
+            printf(")");
             break;
             
         case ASSIGNMENT_STATEMENT_NODE:
@@ -428,7 +439,7 @@ void ast_print_help(node *ast, int indent_num) {
                 perror("\n[error]: constructor missing type\n");
                 exit(1);
             }
-            printf("(%s CSTR ", ast->constructor.type->type_node.type_name);
+            printf("(CALL %s ", ast->constructor.type->type_node.type_name);
             ast_print_help(ast->constructor.args, indent_num);
             printf(")");
             break;

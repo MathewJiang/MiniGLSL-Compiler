@@ -171,15 +171,15 @@ declaration
   ;
 
 statement
-  :   variable ASSIGNMENT expression SEMICOLON				{ yTRACE("statment -> variable = expression ;\n"); printf("expression1=%p, expression2=%p\n", $1, $3); $$ = ast_allocate(ASSIGNMENT_STATEMENT_NODE, $1, $3); }
+  :   variable ASSIGNMENT expression SEMICOLON				{ yTRACE("statment -> variable = expression ;\n"); $$ = ast_allocate(ASSIGNMENT_STATEMENT_NODE, $1, $3); }
   |   IF LPARENTHESES expression RPARENTHESES statement else_statement	{ yTRACE("statement -> if (expression) statement else_statement\n"); $$ = ast_allocate(IF_STATEMENT_NODE, $3, $5, $6); }
   |   WHILE LPARENTHESES expression RPARENTHESES statement		{ yTRACE("statement -> while (expression) statement\n"); /* Ignore. */}
   |   scope								{ yTRACE("statement -> scope\n"); $$ = ast_allocate(NESTED_SCOPE_NODE, $1); }
-  |   SEMICOLON								{ yTRACE("statement -> ;\n"); }
+  |   SEMICOLON								{ yTRACE("statement -> ;\n"); $$ = NULL; }
   ;
 
 else_statement
-  :   ELSE statement                            { yTRACE("else_statement -> else statement\n"); $$ = ast_allocate(ELSE_STATEMENT_NODE, $2); }
+  :   ELSE statement                            { yTRACE("else_statement -> else statement\n"); printf("[parser.y]else statement: %p\n", $2); $$ = ast_allocate(ELSE_STATEMENT_NODE, $2); }
   |   /*epsilon*/                               { yTRACE("else_statement -> epsilon\n"); $$ = NULL; }
   ;
 
