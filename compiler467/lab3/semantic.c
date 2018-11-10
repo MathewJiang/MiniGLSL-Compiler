@@ -86,7 +86,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             if (!var_entry) {
                 printf("[error]Scope checking: variable %s has not declared before use\n", ast->var_node.id);
                 ast->inferred_type.type_name = ANY;
-            } else if (!var_entry->valid || !var_entry->stype == UNKNOWN_TYPE) {
+            } else if (!var_entry->valid || var_entry->stype == UNKNOWN_TYPE) {
                 printf("[error]Scope checking: reference to INVALID variable %s. possibly undeclared successfully.\n", ast->var_node.id);
                 ast->inferred_type.type_name = ANY;
             } else {
@@ -135,7 +135,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 }
             } else if (ast->unary_expr.op == SUBTRACT) {
                 //s, v
-                if (right_type == BOOL) {
+                if (right_type == BOOL || right_type == ANY) {
                     ast->inferred_type.type_name = ANY;
                     perror("Bad operand type: [UNARY]-: operand must be arithmetic types\n");
                 } else {
@@ -157,15 +157,6 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             ast_semantic_check_help(ast->binary_expr.right, curr_scope);
             type_id right_type = ast->binary_expr.right->inferred_type.type_name;
             
-//            if (ast->binary_expr.op == NOT) {
-//                if (left_type != BOOL || right_type != BOOL) {
-//                    ast->type.type_name = ANY;
-//                    perror("Bad operand type: [BINARY]!: both operand must be BOOL\n");
-//                } else {
-//                    ast->type.type_name = BOOL;
-//                }
-//            }
-            
             if (ast->binary_expr.op == AND     ||
                 ast->binary_expr.op == OR) {
                 //ss, vv
@@ -182,7 +173,8 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 ast->binary_expr.op == LT           ||    
                 ast->binary_expr.op == LE) {
                 //ss
-                if (left_type != right_type) {
+                if ((left_type != right_type) 
+                        || (left_type == ANY || right_type == ANY)) {
                     ast->inferred_type.type_name = ANY;
                     perror("Bad operand type: [BINARY]<, <=, >, >=: cannot compare with different types\n");
                 } else {
@@ -193,7 +185,8 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             else if (ast->binary_expr.op == EQUAL   ||
                 ast->binary_expr.op == NOTEQUAL) {
                 //ss, vv
-                if (left_type != right_type) {
+                if ((left_type != right_type) 
+                        || (left_type == ANY || right_type == ANY)) {
                     ast->inferred_type.type_name = ANY;
                     perror("Bad operand type: [BINARY]==, !=: both operand must be BOOL\n");
                 } else {
@@ -204,7 +197,8 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             else if (ast->binary_expr.op == ADD   ||
                     ast->binary_expr.op == SUBTRACT) {
                 //ss, vv
-                if (left_type == BOOL || right_type == BOOL) {
+                if ((left_type == BOOL || right_type == BOOL) 
+                        || (left_type == ANY || right_type == ANY)) {
                     ast->inferred_type.type_name = ANY;
                     perror("Bad operand type: [BINARY]+, -: both operand must not be BOOL\n");
                 } else if (left_type == right_type) {
@@ -213,7 +207,6 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                     ast->inferred_type.type_name = ANY;
                     perror("Bad operand type: [BINARY]+, -: operands not the same type\n");
                 }
-                
             } 
             
             else if (ast->binary_expr.op == MULTIPLY) {
