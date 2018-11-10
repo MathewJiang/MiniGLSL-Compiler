@@ -500,7 +500,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             break;
     
         default:
-            printf("[debug]AST Print: unknown AST node\n");
+            printf("[debug]AST Semantic check: unknown AST node\n");
             break;
     }
 }

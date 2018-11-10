@@ -205,6 +205,7 @@ struct node_ {
 
 node *ast_allocate(node_kind type, ...);
 void ast_free(node *ast);
+void ast_destroy_help(node *ast);
 void ast_print(node * ast);
 void ast_print_help(node *ast, int indent_num);
 void indent(int num);

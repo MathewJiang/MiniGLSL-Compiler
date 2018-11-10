@@ -172,7 +172,113 @@ node *ast_allocate(node_kind kind, ...) {
 
 void ast_free(node *ast) {
     //TODO: do a recursive free (post-function)
-    free(ast);
+    ast_destroy_help(ast);
+    ast = NULL;
+    printf("Successfully deallocated AST.\n");
+}
+
+void ast_destroy_help(node *ast) {
+    if (!ast) return;
+    
+    switch (ast->kind) {
+        case SCOPE_NODE:
+            ast_destroy_help(ast->scope.statements);
+            ast_destroy_help(ast->scope.declarations);
+            free(ast);
+            break;
+
+          case NESTED_SCOPE_NODE:
+            ast_destroy_help(ast->nested_scope.scope->scope.statements);
+            ast_destroy_help(ast->nested_scope.scope->scope.declarations);
+            free(ast);
+            break;
+    
+        case DECLARATIONS_NODE:
+            ast_destroy_help(ast->declarations.declarations);
+            ast_destroy_help(ast->declarations.declaration);
+            free(ast);
+            break;
+            
+        case STATEMENTS_NODE:
+            ast_destroy_help(ast->statements.statements);
+            ast_destroy_help(ast->statements.statement);
+            free(ast);
+            break;
+
+        case DECLARATION_NODE:
+            ast_destroy_help(ast->declaration.type);
+            ast_destroy_help(ast->declaration.expr);
+            free(ast);
+            break;
+
+        case ASSIGNMENT_STATEMENT_NODE:
+            ast_destroy_help(ast->assign_statement.expr);
+            ast_destroy_help(ast->assign_statement.var);
+            free(ast);
+            break;
+            
+        case IF_STATEMENT_NODE:
+            ast_destroy_help(ast->if_statement_node.if_condition);
+            ast_destroy_help(ast->if_statement_node.else_statement);
+            ast_destroy_help(ast->if_statement_node.statement);
+            free(ast);
+            break;
+            
+        case ELSE_STATEMENT_NODE:
+            ast_destroy_help(ast->else_statement_node.else_statement);
+            free(ast);
+            break;
+
+        case TYPE_NODE:
+            free(ast);
+            break;
+
+        case INT_NODE:
+            free(ast);
+            break;
+
+        case FLOAT_NODE:
+            free(ast);
+            break;
+
+        case BOOL_NODE:
+            free(ast);
+            break;
+
+        case VAR_NODE:
+            free(ast);
+            break;
+
+        case UNARY_EXPRESSION_NODE:
+            ast_destroy_help(ast->unary_expr.right);
+            free(ast);
+            break;
+
+        case BINARY_EXPRESSION_NODE:
+            ast_destroy_help(ast->binary_expr.left);
+            ast_destroy_help(ast->binary_expr.right);
+            free(ast);
+            break;
+
+        case FUNCTION_NODE:
+            ast_destroy_help(ast->function.args);
+            free(ast);
+            break;
+
+        case CONSTRUCTOR_NODE:
+            ast_destroy_help(ast->constructor.type);
+            ast_destroy_help(ast->constructor.args);
+            free(ast);
+            break;
+            
+        case ARGS_NODE:
+            ast_destroy_help(ast->args_node.args);
+            ast_destroy_help(ast->args_node.expr);
+            free(ast);
+            break;
+
+        default: break;
+    }
 }
 
 void ast_print(node *ast) {
