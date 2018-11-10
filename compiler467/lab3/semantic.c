@@ -264,6 +264,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
         case CONSTRUCTOR_NODE:
             ast_semantic_check_help(ast->constructor.args, curr_scope);
             ast_semantic_check_help(ast->constructor.type, curr_scope);
+            semantic_check_constructor_call(ast);
             break;
         
         case ARGS_NODE:
@@ -297,4 +298,48 @@ bool scope_check_var_declaration_valid(node* ast, snode* curr_scope) {
         printf("[Error]Scope checking: ast node checked is not a declaration.\n");
     }
     return find_sentry_in_snode_by_id(ast->declaration.id, curr_scope) ? 0 : 1; // NOT valid if found!!!
+}
+
+bool semantic_check_constructor_call(node* cstr_stmt) {
+    if (cstr_stmt == NULL) {
+        printf("[Error]Semantic-check: Constructor node is NULL\n");
+        return 0;
+    }
+    bool err = false;
+    
+    type_id cstr_type_id = stype_to_type_id(name_to_stype(cstr_stmt->constructor.type->type_node.type_name));
+    bool is_vec = cstr_stmt->constructor.type->type_node.is_vec;
+    int vec_size = cstr_stmt->constructor.type->type_node.vec_size;
+    
+    int args_count = 0;
+    node* curr_args = cstr_stmt->constructor.args;
+    if (!curr_args) {
+        printf("[Error]Semantic-check: Constructor has no args.\n");
+        return 0;
+    }
+
+    while(curr_args) {
+        args_count++;
+        node* curr_arg_expr = curr_args->args_node.expr;
+        // Check if each arg has same type as constructor, then check arg count matches
+        struct node_type curr_arg_type = curr_arg_expr->inferred_type;
+        if (curr_arg_type.is_vec) {
+            printf("[Error]Semantic-check: Constructor argument %d should not be a vector.\n", args_count);
+            err = true;
+        }
+        if (curr_arg_type.type_name != cstr_type_id) {
+            printf("[Error]Semantic-check: Constructor argument %d has type %d, expecting %d.\n", args_count, curr_arg_type.type_name, cstr_type_id);
+            err = true;
+        }
+        curr_args = curr_args->args_node.args;
+    }
+    if (!is_vec && args_count != 1) {
+        printf("[Error]Semantic-check: Constructor expects exactly 1 argument, actually passing in %d.\n", args_count);
+        err = true;
+    } else if (is_vec && args_count != vec_size) {
+        printf("[Error]Semantic-check: Constructor expects exactly %d arguments, actually passing in %d.\n", vec_size, args_count);
+        err = true;
+    }
+    
+    return !err;
 }

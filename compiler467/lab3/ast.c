@@ -530,3 +530,20 @@ void print_type_id(type_id type_name, int is_vec, int vec_index) {
             break;
     }
 }
+
+char* get_type_id_name(type_id type_name) {
+    switch (type_name) {
+        case INT:
+            return "int";
+        case FLOAT:
+            return "float";
+        case BOOL:
+            return "bool";
+//        case VEC: 
+//            printf("[error]vec case unimplemented\n");
+//            exit(1);
+//            break;
+        default: 
+            return "ANY";
+    }
+}

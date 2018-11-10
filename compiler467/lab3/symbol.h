@@ -21,6 +21,7 @@ typedef enum { // vec type_id = vec_base_type + vec_len
 //    VEC4_TYPE = 34,
     DEFAULT_TYPE = 500
 } sentry_type;
+typedef sentry_type stype;
 
 struct snode_entry {
     char* id;
