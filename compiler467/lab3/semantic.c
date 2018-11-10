@@ -1,8 +1,11 @@
 #include "ast.h"
 #include "semantic.h"
+#include "common.h"
+#include "parser.tab.h"
 
 
 snode* root_scope = NULL;
+extern int errorOccured;
 
 void ast_semantic_check(node* ast) {
     ast_semantic_check_help(ast, root_scope);
@@ -60,6 +63,9 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             sentry_push(candidate_sentry, curr_scope);
             snode_print(curr_scope);
             
+            if (ast->declaration.expr) {
+                ast_semantic_check_help(ast->declaration.expr, curr_scope);
+            }
         }
             break;
             
@@ -75,40 +81,185 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             break;
 
         case INT_NODE:
+            ast->type.type_name = INT;
+            ast->type.is_vec = 0;
+            ast->type.vec_size = 0;
             break;
 
         case FLOAT_NODE:
+            ast->type.type_name = FLOAT;
+            ast->type.is_vec = 0;
+            ast->type.vec_size = 0;
             break;
 
         case BOOL_NODE:
+            ast->type.type_name = BOOL;
+            ast->type.is_vec = 0;
+            ast->type.vec_size = 0;
             break;
 
         case UNARY_EXPRESSION_NODE:
+        {
+            ast_semantic_check_help(ast->unary_expr.right, curr_scope);
+            type_id right_type = ast->unary_expr.right->type.type_name;
+            
+            if (ast->unary_expr.op == NOT) {
+                //s, v 
+                if (right_type != BOOL) {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [UNARY]!: operand must be BOOL type\n");
+                } else {
+                    ast->type.type_name = BOOL;
+                }
+            } else if (ast->unary_expr.op == SUBTRACT) {
+                //s, v
+                if (right_type == BOOL) {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [UNARY]-: operand must be arithmetic types\n");
+                } else {
+                    ast->type.type_name = right_type;
+                }
+            } else {
+                perror("Unknown unary type\n");
+            }
+        }
             break;
 
         case BINARY_EXPRESSION_NODE:
+        {
+            printf("Enter binary\n");
+            //TODO: have not dealt with all the vector case
+            //Only scalar case for now
+            ast_semantic_check_help(ast->binary_expr.left, curr_scope);
+            type_id left_type = ast->binary_expr.left->type.type_name;
+            ast_semantic_check_help(ast->binary_expr.right, curr_scope);
+            type_id right_type = ast->binary_expr.right->type.type_name;
+            
+//            if (ast->binary_expr.op == NOT) {
+//                if (left_type != BOOL || right_type != BOOL) {
+//                    ast->type.type_name = ANY;
+//                    perror("Bad operand type: [BINARY]!: both operand must be BOOL\n");
+//                } else {
+//                    ast->type.type_name = BOOL;
+//                }
+//            }
+            
+            if (ast->binary_expr.op == AND     ||
+                ast->binary_expr.op == OR) {
+                //ss, vv
+                if (left_type != BOOL || right_type != BOOL) {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [BINARY]&&, ||: both operand must be BOOL\n");
+                } else {
+                    ast->type.type_name = BOOL;
+                }
+            } 
+            
+            else if (ast->binary_expr.op == GT      ||
+                ast->binary_expr.op == GE           ||
+                ast->binary_expr.op == LT           ||    
+                ast->binary_expr.op == LE) {
+                //ss
+                if (left_type != right_type) {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [BINARY]<, <=, >, >=: cannot compare with different types\n");
+                } else {
+                    ast->type.type_name = BOOL;
+                }
+            }
+            
+            else if (ast->binary_expr.op == EQUAL   ||
+                ast->binary_expr.op == NOTEQUAL) {
+                //ss, vv
+                if (left_type != right_type) {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [BINARY]==, !=: both operand must be BOOL\n");
+                } else {
+                    ast->type.type_name = BOOL;
+                }
+            } 
+            
+            else if (ast->binary_expr.op == ADD   ||
+                    ast->binary_expr.op == SUBTRACT) {
+                //ss, vv
+                if (left_type == BOOL || right_type == BOOL) {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [BINARY]+, -: both operand must not be BOOL\n");
+                } else if (left_type == right_type) {
+                    ast->type.type_name = left_type;
+                } else {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [BINARY]+, -: operands not the same type\n");
+                }
+                
+            } 
+            
+            else if (ast->binary_expr.op == MULTIPLY) {
+                //ss, vv, sv, vs
+                if (left_type == BOOL || right_type == BOOL) {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [BINARY]*: both operand must not be BOOL\n");
+                } else if (left_type == right_type) {
+                    ast->type.type_name = left_type;
+                } else {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [BINARY]*: operands not the same type\n");
+                }
+            } 
+            
+            else if (ast->binary_expr.op == DIVIDE    ||
+                    ast->binary_expr.op == POWER) {
+                //ss
+                if (left_type == BOOL || right_type == BOOL) {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [BINARY]/, ^: both operand must not be BOOL\n");
+                } else if (left_type == right_type) {
+                    ast->type.type_name = left_type;
+                } else {
+                    ast->type.type_name = ANY;
+                    perror("Bad operand type: [BINARY]/, ^: operands not the same type\n");
+                }
+            }
+        }
             break;
             
         case IF_STATEMENT_NODE:
+            ast_semantic_check_help(ast->if_statement_node.if_condition, curr_scope);
+            ast_semantic_check_help(ast->if_statement_node.statement, curr_scope);
+            ast_semantic_check_help(ast->if_statement_node.else_statement, curr_scope);
+            if (ast->if_statement_node.if_condition->type.type_name != BOOL) {
+                ast->type.type_name = ANY;
+                perror("Bad expr type: [IF]: expr after if must be BOOL type\n");
+            }
             break;
             
         case ELSE_STATEMENT_NODE:
+            ast_semantic_check_help(ast->else_statement_node.else_statement, curr_scope);
             break;
             
         case ASSIGNMENT_STATEMENT_NODE:
+            ast_semantic_check_help(ast->assign_statement.expr, curr_scope);
+            ast_semantic_check_help(ast->assign_statement.var, curr_scope);
             break;
 
         case FUNCTION_NODE:
+            ast_semantic_check_help(ast->function.args, curr_scope);
             break;
 
         case CONSTRUCTOR_NODE:
+            ast_semantic_check_help(ast->constructor.args, curr_scope);
+            ast_semantic_check_help(ast->constructor.type, curr_scope);
             break;
-            
+        
+        case ARGS_NODE:
+            ast_semantic_check_help(ast->args_node.args, curr_scope);
+            ast_semantic_check_help(ast->args_node.expr, curr_scope);
+            break;
+    
         default:
             printf("[debug]AST Print: unknown AST node\n");
             break;
     }
-    
 }
 
 sentry* find_var_reference_by_id(char* id, snode* curr_scope) {

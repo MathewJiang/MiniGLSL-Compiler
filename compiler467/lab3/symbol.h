@@ -32,7 +32,7 @@ struct snode_entry {
     struct snode_entry* next;
     struct snode_entry* prev;
 };
-typedef snode_entry sentry;
+typedef struct snode_entry sentry;
 
 struct scope_node {
     struct scope_node* parent_scope; 
@@ -40,7 +40,7 @@ struct scope_node {
     sentry* sentry_tail;
     int sentry_count;
 };
-typedef scope_node snode;
+typedef struct scope_node snode;
 
 // Sentry functions
 sentry* sentry_alloc();

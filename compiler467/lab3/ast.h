@@ -49,11 +49,36 @@ typedef enum {
   DECLARATION_NODE      = (1 << 15)
 } node_kind;
 
+typedef enum {
+    INT     = 100,
+    FLOAT   = 101,
+    BOOL    = 102,
+    BVEC2   = 103,
+    BVEC3   = 104,
+    BVEC4   = 105,
+    IVEC2   = 106,        
+    IVEC3   = 107,        
+    IVEC4   = 108,        
+    VEC2    = 109,
+    VEC3    = 110,
+    VEC4    = 111,
+    ANY     = 200
+}type_id;
+
+struct node_type {
+    type_id type_name;
+    int is_vec;
+    int vec_size;
+};
+typedef struct node_type node_type;
+
+
 struct node_ {
 
   // an example of tagging each node with a type
   node_kind kind;
-
+  node_type type;
+  
   union {
     struct {
       node *declarations;
@@ -82,8 +107,8 @@ struct node_ {
 //    }expression_node;
 
     struct {
-      node* expr;
-      node* if_statement;
+      node* statement;
+      node* if_condition;
       node* else_statement;
     } if_statement_node;
     
@@ -155,6 +180,7 @@ void ast_print(node * ast);
 void ast_print_help(node *ast, int indent_num);
 void indent(int num);
 void print_op(int op);
+void print_type_id(type_id type_name, int is_vec, int vec_index);
 
 int semantic_check(node * ast);
 

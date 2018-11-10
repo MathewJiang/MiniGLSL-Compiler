@@ -67,8 +67,8 @@ node *ast_allocate(node_kind kind, ...) {
             break;
             
         case IF_STATEMENT_NODE:
-            ast->if_statement_node.if_statement = va_arg(args, node *);
-            ast->if_statement_node.expr = va_arg(args, node *);
+            ast->if_statement_node.if_condition = va_arg(args, node *);
+            ast->if_statement_node.statement = va_arg(args, node *);
             ast->if_statement_node.else_statement = va_arg(args, node *);
             break;
             
@@ -294,20 +294,20 @@ void ast_print_help(node *ast, int indent_num) {
             break;
 
         case INT_NODE:
-            printf("%d", ast->int_val);
+            printf("%d ", ast->int_val);
             break;
 
         case FLOAT_NODE:
-            printf("%.2lf", ast->float_val);
+            printf("%.2lf ", ast->float_val);
             break;
 
         case BOOL_NODE:
             //TODO: determine types for boolean variable
             //so that "true" or "false" will be printed
             if (ast->bool_val) {
-                printf("true");
+                printf("true ");
             } else {
-                printf("false");
+                printf("false ");
             }
             break;
             //            
@@ -333,7 +333,7 @@ void ast_print_help(node *ast, int indent_num) {
             indent(indent_num);
             printf("(BINARY ");
             //TODO: determine the resulting type afterwards 
-            printf("ANY ");
+            print_type_id(ast->type.type_name, ast->type.is_vec, ast->type.vec_size);
 
             print_op(ast->binary_expr.op);
 
@@ -354,7 +354,7 @@ void ast_print_help(node *ast, int indent_num) {
             break;
             
         case IF_STATEMENT_NODE:
-            if (!ast->if_statement_node.if_statement) {
+            if (!ast->if_statement_node.if_condition) {
                 perror("\n[error]if statement node lack condition\n");
                 exit(1);
             }
@@ -364,9 +364,9 @@ void ast_print_help(node *ast, int indent_num) {
 //            }
             indent(indent_num);
             printf("(IF ");
-            ast_print_help(ast->if_statement_node.if_statement, indent_num);
-            if (ast->if_statement_node.expr) {
-                ast_print_help(ast->if_statement_node.expr, indent_num);
+            ast_print_help(ast->if_statement_node.if_condition, indent_num);
+            if (ast->if_statement_node.statement) {
+                ast_print_help(ast->if_statement_node.statement, indent_num);
             }
             if (ast->if_statement_node.else_statement)
                 ast_print_help(ast->if_statement_node.else_statement, indent_num);
@@ -413,27 +413,6 @@ void ast_print_help(node *ast, int indent_num) {
             }
             printf(")");
             break;
-
-            //        case INT_NODE: 
-            //            break;
-            //        case FLOAT_NODE: 
-            //            break;
-            //        case IDENT_NODE: 
-            //            break;
-            //        case FUNCTION_NODE: 
-            //            break;
-            //        case STATEMENT_NODE: 
-            //            break;
-            //        case IF_STATEMENT_NODE: 
-            //            break;
-            //        case ASSIGNMENT_NODE:     
-            //            break;    
-            //        case NESTED_SCOPE_NODE: 
-            //            break;
-            //        case BOOL_NODE:
-            //            break;
-            //        case DECLARATION_NODE: 
-            //            break;
             
         case CONSTRUCTOR_NODE:
             if (!ast->constructor.type) {
@@ -528,4 +507,26 @@ void debugP(int verbose_flag, const char* str, ...) {
     va_start(args, str);
     vprintf(str, args);
     va_end(args);
+}
+
+
+void print_type_id(type_id type_name, int is_vec, int vec_index) {
+    switch (type_name) {
+        case INT:
+            printf("int ");
+            break;
+        case FLOAT:
+            printf("float ");
+            break;
+        case BOOL:
+            printf("bool ");
+            break;
+//        case VEC: 
+//            printf("[error]vec case unimplemented\n");
+//            exit(1);
+//            break;
+        default: 
+            printf("ANY ");
+            break;
+    }
 }
