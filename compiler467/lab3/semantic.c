@@ -126,6 +126,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                         ast->inferred_type.type_name = ANY;
                         errorOccurred = true;
                     } else {
+                        ast->inferred_type.predef_info = pvar;
                         ast->inferred_type.type_name = pvar->type_name;
                         ast->inferred_type.is_const = 1;
                         ast->inferred_type.is_vec = 0;
