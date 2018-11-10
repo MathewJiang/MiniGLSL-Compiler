@@ -181,8 +181,9 @@ void ast_print(node * ast);
 void ast_print_help(node *ast, int indent_num);
 void indent(int num);
 void print_op(int op);
-void print_type_id(type_id type_name, int is_vec, int vec_index);
-char* get_type_id_name(type_id type_name);
+//char* get_type_id_name(type_id type_name);
+void print_op_unary (int op);
+void print_type_id(type_id type_name, int is_vec, int vec_index, int is_const);
 int semantic_check(node * ast);
 
 #endif /* AST_H_ */

@@ -283,9 +283,11 @@ void ast_print_help(node *ast, int indent_num) {
 
         case VAR_NODE:
             if (ast->var_node.is_vec) {
+                //FIXME: not necessarily need (INDEX)... e.g vec4_obj = vec4_obj
                 //print out the index if accessing array variable
                 printf("(INDEX ");
-                printf("ANY "); //TODO: fix the type after semantic checking
+                print_type_id(ast->inferred_type.type_name, ast->inferred_type.is_vec, 
+                    ast->inferred_type.vec_size, ast->inferred_type.is_const);
                 printf("%s ", ast->var_node.id);
                 printf("%d)", ast->var_node.vec_idx);
             } else {
@@ -317,8 +319,10 @@ void ast_print_help(node *ast, int indent_num) {
         case UNARY_EXPRESSION_NODE:
             printf("(UNARY ");
             //TODO: determine the resulting type afterwards
-            printf("ANY ");
-            print_op(ast->unary_expr.op);
+            //printf("ANY ");
+            print_type_id(ast->inferred_type.type_name, ast->inferred_type.is_vec, 
+                    ast->inferred_type.vec_size, ast->inferred_type.is_const);
+            print_op_unary(ast->unary_expr.op);
 
             if (ast->unary_expr.right != NULL) {
                 ast_print_help(ast->unary_expr.right, indent_num);
@@ -333,7 +337,8 @@ void ast_print_help(node *ast, int indent_num) {
             indent(indent_num);
             printf("(BINARY ");
             //TODO: determine the inferred type afterwards 
-            print_type_id(ast->inferred_type.type_name, ast->inferred_type.is_vec, ast->inferred_type.vec_size);
+            print_type_id(ast->inferred_type.type_name, ast->inferred_type.is_vec, 
+                    ast->inferred_type.vec_size, ast->inferred_type.is_const);
 
             print_op(ast->binary_expr.op);
 
@@ -398,7 +403,8 @@ void ast_print_help(node *ast, int indent_num) {
             printf("(ASSIGN ");
             
             //TODO: determine the resulting type afterwards 
-            printf("ANY ");
+            print_type_id(ast->inferred_type.type_name, ast->inferred_type.is_vec, 
+                    ast->inferred_type.vec_size, ast->inferred_type.is_const);
             ast_print_help(ast->assign_statement.var, indent_num);
             ast_print_help(ast->assign_statement.expr, indent_num);
             printf(")");
@@ -501,6 +507,18 @@ void print_op(int op) {
     }
 }
 
+void print_op_unary (int op) {
+    switch (op) {
+        case SUBTRACT:
+            printf("NEG ");
+            break;
+        case NOTEQUAL:
+            printf("NOT ");
+            break;
+        default: break;
+    }
+}
+
 void debugP(int verbose_flag, const char* str, ...) {
     if (!VB_GLOB || !verbose_flag) return;
     va_list args;
@@ -510,16 +528,31 @@ void debugP(int verbose_flag, const char* str, ...) {
 }
 
 
-void print_type_id(type_id type_name, int is_vec, int vec_index) {
+void print_type_id(type_id type_name, int is_vec, int vec_index, int is_const) {
+    if (is_const) {
+        printf("const ");
+    }
     switch (type_name) {
         case INT:
-            printf("int ");
+            if (is_vec) {
+                printf("ivec%d ", vec_index);
+            } else {
+                printf("int ");
+            }
             break;
         case FLOAT:
-            printf("float ");
+            if (is_vec) {
+                printf("vec%d ", vec_index);
+            } else {
+                printf("float ");
+            }
             break;
         case BOOL:
-            printf("bool ");
+            if (is_vec) {
+                printf("bvec%d ", vec_index);
+            } else {
+                printf("bool ");
+            }
             break;
 //        case VEC: 
 //            printf("[error]vec case unimplemented\n");
@@ -531,19 +564,19 @@ void print_type_id(type_id type_name, int is_vec, int vec_index) {
     }
 }
 
-char* get_type_id_name(type_id type_name) {
-    switch (type_name) {
-        case INT:
-            return "int";
-        case FLOAT:
-            return "float";
-        case BOOL:
-            return "bool";
-//        case VEC: 
-//            printf("[error]vec case unimplemented\n");
-//            exit(1);
-//            break;
-        default: 
-            return "ANY";
-    }
-}
+//char* get_type_id_name(type_id type_name) {
+//    switch (type_name) {
+//        case INT:
+//            return "int";
+//        case FLOAT:
+//            return "float";
+//        case BOOL:
+//            return "bool";
+////        case VEC: 
+////            printf("[error]vec case unimplemented\n");
+////            exit(1);
+////            break;
+//        default: 
+//            return "ANY";
+//    }
+//}
