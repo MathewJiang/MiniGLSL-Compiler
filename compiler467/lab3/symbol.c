@@ -3,25 +3,36 @@
 #include <string.h>
 
 #include "symbol.h"
+#include "ast.h"
 
 // Sentry functions
 sentry* sentry_alloc() {
     sentry* new_sentry = (sentry*)malloc(sizeof(sentry));
     new_sentry->id = NULL;
-    new_sentry->node = NULL;
+    new_sentry->stype = UNKNOWN_TYPE;
+    new_sentry->valid = 0;
+    new_sentry->is_const = 0;
+    new_sentry->is_vec = 0;
+    new_sentry->vec_size = 0;
+    
     new_sentry->next = NULL;
     new_sentry->prev = NULL;
     return new_sentry;
 }
 
-sentry* sentry_alloc(char* id, node* node) {
+sentry* sentry_alloc(char* id, sentry_type stype, int is_const, int is_vec, int vec_size) {
     sentry* new_sentry = sentry_alloc();
     new_sentry->id = id;
-    new_sentry->node = node;
+    new_sentry->stype = stype;
+    new_sentry->is_const = is_const;
+    new_sentry->is_vec = is_vec;
+    new_sentry->vec_size = vec_size;
+    
+    new_sentry->valid = 1;
     return new_sentry;
 }
 
-sentry* sentry_push(snode* snode, sentry* sentry) {
+sentry* sentry_push(sentry* sentry, snode* snode) {
     if (!snode || !sentry) {
         printf("[Error]Snode push: snode or sentry is NULL!!!\n");
         return NULL;
@@ -95,6 +106,28 @@ sentry* remove_sentry_from_snode(sentry* sentry, snode* snode) {
     return sentry;
 }
 
+void sentry_print(sentry* sentry) {
+    if (!sentry) return;
+    printf("id: %s, type_code:%d", sentry->id, sentry->stype);
+}
+
+sentry* ast_node_to_sentry(node* ast_node) {
+    if (!ast_node) return NULL;
+    if (ast_node->kind != DECLARATION_NODE) {
+        printf("[ast_to_entry]: cannot create sentry from ast node of kind %d\n", ast_node->kind);
+        return NULL;
+    }
+    
+    char* id = ast_node->declaration.id;
+    int is_const = ast_node->declaration.is_const;
+    int is_vec = ast_node->declaration.type->type_node.is_vec;
+    int vec_size = ast_node->declaration.type->type_node.vec_size;
+    sentry_type type = name_to_stype(ast_node->declaration.type->type_node.type_name);
+    if (type == UNKNOWN_TYPE) return NULL;
+    
+    return sentry_alloc(id, type, is_const, is_vec, vec_size);
+}
+
 // Snode functions
 snode* snode_alloc(snode* _parent_node) {
     snode* new_snode = (snode*)malloc(sizeof(snode));
@@ -115,4 +148,29 @@ int snode_destroy(snode* snode) {
     }
     free(snode);
     return 1;
+}
+
+void snode_print(snode* snode) {
+    if (!snode) return;
+    sentry* printer = snode->sentry_head;
+    printf("********Printing scope table with %d entries********\n", snode->sentry_count);
+    while(printer) {
+        sentry_print(printer);
+        if (printer->next) {
+            printf("| ");
+        }
+        printer = printer->next;
+    }
+    printf("\n*************************end**************************\n\n");
+}
+
+
+// Other helper functions
+sentry_type name_to_stype(char* type) {
+    if (!type) return UNKNOWN_TYPE;
+    if (type[0] == 'i') return INT_TYPE;
+    if (type[0] == 'f' || type[0] == 'v') return FLOAT_TYPE;
+    if (type[0] == 'b') return BOOL_TYPE;
+    printf("[Name-to-stype]: Unknown type for ast type_name %s\n", type);
+    return DEFAULT_TYPE; 
 }
