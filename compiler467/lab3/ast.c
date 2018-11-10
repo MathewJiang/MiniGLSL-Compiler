@@ -332,8 +332,8 @@ void ast_print_help(node *ast, int indent_num) {
         case BINARY_EXPRESSION_NODE:
             indent(indent_num);
             printf("(BINARY ");
-            //TODO: determine the resulting type afterwards 
-            print_type_id(ast->type.type_name, ast->type.is_vec, ast->type.vec_size);
+            //TODO: determine the inferred type afterwards 
+            print_type_id(ast->inferred_type.type_name, ast->inferred_type.is_vec, ast->inferred_type.vec_size);
 
             print_op(ast->binary_expr.op);
 

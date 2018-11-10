@@ -7,19 +7,19 @@
 
 typedef enum { // vec type_id = vec_base_type + vec_len
     UNKNOWN_TYPE = 0,
-    BOOL_TYPE = 10,
+    BOOL_TYPE = 100,
 //    BVEC2_TYPE = 12,
 //    BVEC3_TYPE = 13,
 //    BVEC4_TYPE = 14,
-    INT_TYPE = 20,
+    INT_TYPE = 200,
 //    IVEC2_TYPE = 22,
 //    IVEC3_TYPE = 23,
 //    IVEC4_TYPE = 24,
-    FLOAT_TYPE = 30,
+    FLOAT_TYPE = 300,
 //    VEC2_TYPE = 32,
 //    VEC3_TYPE = 33,
 //    VEC4_TYPE = 34,
-    DEFAULT_TYPE = 100
+    DEFAULT_TYPE = 500
 } sentry_type;
 
 struct snode_entry {
@@ -59,5 +59,6 @@ void snode_print(snode* snode);
 
 // Helper functions
 sentry_type name_to_stype(char* type);
+type_id stype_to_type_id(sentry_type type);
 
 #endif /* SYMBOL_H_ */

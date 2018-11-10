@@ -174,3 +174,19 @@ sentry_type name_to_stype(char* type) {
     printf("[Name-to-stype]: Unknown type for ast type_name %s\n", type);
     return DEFAULT_TYPE; 
 }
+
+type_id stype_to_type_id(sentry_type type) {
+    switch(type) {
+        case UNKNOWN_TYPE:
+            return ANY;
+        case INT_TYPE:
+            return INT;
+        case FLOAT_TYPE:
+            return FLOAT;
+        case BOOL_TYPE:
+            return BOOL;
+        default:
+            printf("[error]Stype_to_type_id: Unexpected stype, aborting\n");
+            exit(1);
+    }
+}

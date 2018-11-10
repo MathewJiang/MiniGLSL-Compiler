@@ -53,22 +53,23 @@ typedef enum {
     INT     = 100,
     FLOAT   = 101,
     BOOL    = 102,
-    BVEC2   = 103,
-    BVEC3   = 104,
-    BVEC4   = 105,
-    IVEC2   = 106,        
-    IVEC3   = 107,        
-    IVEC4   = 108,        
-    VEC2    = 109,
-    VEC3    = 110,
-    VEC4    = 111,
+//    BVEC2   = 103,
+//    BVEC3   = 104,
+//    BVEC4   = 105,
+//    IVEC2   = 106,        
+//    IVEC3   = 107,        
+//    IVEC4   = 108,        
+//    VEC2    = 109,
+//    VEC3    = 110,
+//    VEC4    = 111,
     ANY     = 200
 }type_id;
 
 struct node_type {
-    type_id type_name;
-    int is_vec;
-    int vec_size;
+    type_id type_name = ANY;
+    int is_vec = 0;
+    int vec_size = -1;
+    int is_const = 0;
 };
 typedef struct node_type node_type;
 
@@ -77,7 +78,7 @@ struct node_ {
 
   // an example of tagging each node with a type
   node_kind kind;
-  node_type type;
+  node_type inferred_type;
   
   union {
     struct {
