@@ -151,84 +151,84 @@ program
   ;
 
 scope
-  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n"); $$ = ast_allocate(SCOPE_NODE, $2, $3); }
+  :   LBRACE declarations statements RBRACE 	{ yTRACE("scope -> declarations statements\n"); $$ = ast_allocate(SCOPE_NODE, $2, $3, yyline); }
   ;
 
 declarations
-  :   declarations declaration                  { yTRACE("declarations -> declarations declaration\n"); $$ = ast_allocate(DECLARATIONS_NODE, $1, $2); }
+  :   declarations declaration                  { yTRACE("declarations -> declarations declaration\n"); $$ = ast_allocate(DECLARATIONS_NODE, $1, $2, yyline); }
   |   /*epsilon*/                               { yTRACE("declarations -> epsilon\n"); $$ = NULL; }
   ;
 
 statements
-  :   statements statement                      { yTRACE("statements -> statements statement\n"); $$ = ast_allocate(STATEMENTS_NODE, $1, $2);}
-  |   /*epsilon*/                               { yTRACE("statements -> epsilon\n"); $$ = NULL;}
+  :   statements statement                      { yTRACE("statements -> statements statement\n"); $$ = ast_allocate(STATEMENTS_NODE, $1, $2, yyline); }
+  |   /*epsilon*/                               { yTRACE("statements -> epsilon\n"); $$ = NULL; }
   ;
 
 declaration
-  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL); }
-  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4); }
-  |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 1, $2, $3, $5); }
+  :   type ID SEMICOLON					{ yTRACE("declaration -> type ID ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, NULL, yyline); }
+  |   type ID ASSIGNMENT expression SEMICOLON		{ yTRACE("declaration -> type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 0, $1, $2, $4, yyline); }
+  |   CONST type ID ASSIGNMENT expression SEMICOLON	{ yTRACE("declaration -> const type ID = expression ;\n"); $$ = ast_allocate(DECLARATION_NODE, 1, $2, $3, $5, yyline); }
   ;
 
 statement
-  :   variable ASSIGNMENT expression SEMICOLON				{ yTRACE("statment -> variable = expression ;\n"); $$ = ast_allocate(ASSIGNMENT_STATEMENT_NODE, $1, $3); }
-  |   IF LPARENTHESES expression RPARENTHESES statement else_statement	{ yTRACE("statement -> if (expression) statement else_statement\n"); $$ = ast_allocate(IF_STATEMENT_NODE, $3, $5, $6); }
-  |   WHILE LPARENTHESES expression RPARENTHESES statement		{ yTRACE("statement -> while (expression) statement\n"); /* Ignore. */}
-  |   scope								{ yTRACE("statement -> scope\n"); $$ = ast_allocate(NESTED_SCOPE_NODE, $1); }
+  :   variable ASSIGNMENT expression SEMICOLON				{ yTRACE("statment -> variable = expression ;\n"); $$ = ast_allocate(ASSIGNMENT_STATEMENT_NODE, $1, $3, yyline); }
+  |   IF LPARENTHESES expression RPARENTHESES statement else_statement	{ yTRACE("statement -> if (expression) statement else_statement\n"); $$ = ast_allocate(IF_STATEMENT_NODE, $3, $5, $6, yyline); }
+  |   WHILE LPARENTHESES expression RPARENTHESES statement		{ yTRACE("statement -> while (expression) statement\n"); /* Ignore. */ }
+  |   scope								{ yTRACE("statement -> scope\n"); $$ = ast_allocate(NESTED_SCOPE_NODE, $1, yyline); }
   |   SEMICOLON								{ yTRACE("statement -> ;\n"); $$ = NULL; }
   ;
 
 else_statement
-  :   ELSE statement                            { yTRACE("else_statement -> else statement\n"); $$ = ast_allocate(ELSE_STATEMENT_NODE, $2); }
+  :   ELSE statement                            { yTRACE("else_statement -> else statement\n"); $$ = ast_allocate(ELSE_STATEMENT_NODE, $2, yyline); }
   |   /*epsilon*/                               { yTRACE("else_statement -> epsilon\n"); $$ = NULL; }
   ;
 
 type
-  :   INT_T                                     { yTRACE("type -> int\n"); $$ = ast_allocate(TYPE_NODE, "int", 0); }
-  |   FLOAT_T                                   { yTRACE("type -> float\n"); $$ = ast_allocate(TYPE_NODE, "float", 0); }
-  |   BOOL_T                                    { yTRACE("type -> bool\n"); $$ = ast_allocate(TYPE_NODE, "bool", 0); }
-  |   VEC_T                                     { yTRACE("type -> vec\n"); $$ = ast_allocate(TYPE_NODE, $1, 1); }
+  :   INT_T                                     { yTRACE("type -> int\n"); $$ = ast_allocate(TYPE_NODE, "int", 0, yyline); }
+  |   FLOAT_T                                   { yTRACE("type -> float\n"); $$ = ast_allocate(TYPE_NODE, "float", 0, yyline); }
+  |   BOOL_T                                    { yTRACE("type -> bool\n"); $$ = ast_allocate(TYPE_NODE, "bool", 0, yyline); }
+  |   VEC_T                                     { yTRACE("type -> vec\n"); $$ = ast_allocate(TYPE_NODE, $1, 1, yyline); }
   ;
 
 expression
   :   constructor				{ yTRACE("expression -> constructor\n"); }
   |   function					{ yTRACE("expression -> function\n"); }
-  |   INT_C					{ yTRACE("expression -> int_c\n"); /*printf("[debug]int is: %d\n", $1);*/  $$ = ast_allocate(INT_NODE, $1);}
-  |   FLOAT_C					{ yTRACE("expression -> float_c\n"); $$ = ast_allocate(FLOAT_NODE, $1); }
-  |   BOOL_C					{ yTRACE("expression -> bool_c\n"); $$ = ast_allocate(BOOL_NODE, $1); }
+  |   INT_C					{ yTRACE("expression -> int_c\n"); /*printf("[debug]int is: %d\n", $1);*/  $$ = ast_allocate(INT_NODE, $1, yyline); }
+  |   FLOAT_C					{ yTRACE("expression -> float_c\n"); $$ = ast_allocate(FLOAT_NODE, $1, yyline); }
+  |   BOOL_C					{ yTRACE("expression -> bool_c\n"); $$ = ast_allocate(BOOL_NODE, $1, yyline); }
   |   variable					{ yTRACE("expression -> variable\n"); }
-  |   NOT expression %prec NEG			{ yTRACE("expression -> NOT expression\n"); $$ = ast_allocate(UNARY_EXPRESSION_NODE, NOTEQUAL, $2); }
-  |   SUBTRACT expression %prec NEG		{ yTRACE("expression -> NEG expression\n"); $$ = ast_allocate(UNARY_EXPRESSION_NODE, SUBTRACT, $2); }
-  |   expression AND expression			{ yTRACE("expression -> expression AND expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, AND, $1, $3); }
-  |   expression OR expression			{ yTRACE("expression -> expression OR expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, OR, $1, $3); }
-  |   expression EQUAL expression		{ yTRACE("expression -> expression EQUAL expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, EQUAL, $1, $3); }
-  |   expression NOTEQUAL expression		{ yTRACE("expression -> expression NOTEQUAL expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, NOTEQUAL, $1, $3); }
-  |   expression GT expression			{ yTRACE("expression -> expression GT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, GT, $1, $3); }
-  |   expression GE expression			{ yTRACE("expression -> expression GE expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, GE, $1, $3); }
-  |   expression LT expression			{ yTRACE("expression -> expression LT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, LT, $1, $3); }
-  |   expression LE expression			{ yTRACE("expression -> expression LE expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, LE, $1, $3); }
-  |   expression ADD expression			{ yTRACE("expression -> expression ADD expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, ADD, $1, $3); }
-  |   expression SUBTRACT expression		{ yTRACE("expression -> expression SUBTRACT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, SUBTRACT, $1, $3); }
-  |   expression MULTIPLY expression		{ yTRACE("expression -> expression MULTIPLY expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, MULTIPLY, $1, $3); }
-  |   expression DIVIDE expression		{ yTRACE("expression -> expression DIVIDE expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, DIVIDE, $1, $3); }
+  |   NOT expression %prec NEG			{ yTRACE("expression -> NOT expression\n"); $$ = ast_allocate(UNARY_EXPRESSION_NODE, NOTEQUAL, $2, yyline); }
+  |   SUBTRACT expression %prec NEG		{ yTRACE("expression -> NEG expression\n"); $$ = ast_allocate(UNARY_EXPRESSION_NODE, SUBTRACT, $2, yyline); }
+  |   expression AND expression			{ yTRACE("expression -> expression AND expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, AND, $1, $3, yyline); }
+  |   expression OR expression			{ yTRACE("expression -> expression OR expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, OR, $1, $3, yyline); }
+  |   expression EQUAL expression		{ yTRACE("expression -> expression EQUAL expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, EQUAL, $1, $3, yyline); }
+  |   expression NOTEQUAL expression		{ yTRACE("expression -> expression NOTEQUAL expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, NOTEQUAL, $1, $3, yyline); }
+  |   expression GT expression			{ yTRACE("expression -> expression GT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, GT, $1, $3, yyline); }
+  |   expression GE expression			{ yTRACE("expression -> expression GE expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, GE, $1, $3, yyline); }
+  |   expression LT expression			{ yTRACE("expression -> expression LT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, LT, $1, $3, yyline); }
+  |   expression LE expression			{ yTRACE("expression -> expression LE expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, LE, $1, $3, yyline); }
+  |   expression ADD expression			{ yTRACE("expression -> expression ADD expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, ADD, $1, $3, yyline); }
+  |   expression SUBTRACT expression		{ yTRACE("expression -> expression SUBTRACT expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, SUBTRACT, $1, $3, yyline); }
+  |   expression MULTIPLY expression		{ yTRACE("expression -> expression MULTIPLY expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, MULTIPLY, $1, $3, yyline); }
+  |   expression DIVIDE expression		{ yTRACE("expression -> expression DIVIDE expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, DIVIDE, $1, $3, yyline); }
 //  |   expression ASSIGNMENT expression		{ yTRACE("expression -> expression ASSIGNMENT expression\n"); 
-//                                                                $$ = ast_allocate(BINARY_EXPRESSION_NODE, ASSIGNMENT, $1, $3); }
-  |   expression POWER expression		{ yTRACE("expression -> expression POWER expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, POWER, $1, $3); }
+//                                                                $$ = ast_allocate(BINARY_EXPRESSION_NODE, ASSIGNMENT, $1, $3, yyline); }
+  |   expression POWER expression		{ yTRACE("expression -> expression POWER expression\n"); $$ = ast_allocate(BINARY_EXPRESSION_NODE, POWER, $1, $3, yyline); }
   |   LPARENTHESES expression RPARENTHESES	{ yTRACE("(expression)\n"); }
   ;
 
 variable
-  :   ID                                        { yTRACE("variable -> ID\n"); $$ = ast_allocate(VAR_NODE, $1, 0, -1); }
-  |   ID LBRACKET INT_C RBRACKET                { yTRACE("variable -> ID [ int_c ]\n"); $$ = ast_allocate(VAR_NODE, $1, 1, $3); }
+  :   ID                                        { yTRACE("variable -> ID\n"); $$ = ast_allocate(VAR_NODE, $1, 0, -1, yyline); }
+  |   ID LBRACKET INT_C RBRACKET                { yTRACE("variable -> ID [ int_c ]\n"); $$ = ast_allocate(VAR_NODE, $1, 1, $3, yyline); }
   ;
 
 constructor
-  :   type LPARENTHESES arguments RPARENTHESES		{ yTRACE("constructor -> type ( arguments)\n"); $$ = ast_allocate(CONSTRUCTOR_NODE, $1, $3); }
+  :   type LPARENTHESES arguments RPARENTHESES		{ yTRACE("constructor -> type ( arguments)\n"); $$ = ast_allocate(CONSTRUCTOR_NODE, $1, $3, yyline); }
   ;
 
 function
   :   FUNC_ID LPARENTHESES arguments_opt RPARENTHESES	{ yTRACE("function -> func_id ( arguments_opt )\n");
-                                                          $$ = ast_allocate(FUNCTION_NODE, $1, $3); 
+                                                          $$ = ast_allocate(FUNCTION_NODE, $1, $3, yyline); 
                                                         }
   ;
 
@@ -238,8 +238,8 @@ arguments_opt
   ;
 
 arguments
-  :   arguments COMMA expression                { yTRACE("arguments -> arguments , expression\n"); $$ = ast_allocate(ARGS_NODE, $3, $1); }
-  |   expression                                { yTRACE("arguments -> expression\n"); $$ = ast_allocate(ARGS_NODE, $1, NULL); }
+  :   arguments COMMA expression                { yTRACE("arguments -> arguments , expression\n"); $$ = ast_allocate(ARGS_NODE, $3, $1, yyline); }
+  |   expression                                { yTRACE("arguments -> expression\n"); $$ = ast_allocate(ARGS_NODE, $1, NULL, yyline); }
   ; 
 
 

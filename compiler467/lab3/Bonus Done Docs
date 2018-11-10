@@ -1,0 +1,7 @@
+Bonus done in hw3:
+
+- Report the line number on which the semantic error occured.
+
+- Provide a contextual message that gives extra meaning to the error to help the programmer debug the error. For example, if the error involves writing to a const qualified variable, then report the line number where that variable was declared.
+
+We provide very detailed error message to describe precisely what the semantic error is, and include a line number to locate that error.

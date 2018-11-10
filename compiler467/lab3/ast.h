@@ -107,6 +107,7 @@ struct node_ {
   // an example of tagging each node with a type
   node_kind kind;
   node_type inferred_type;
+  int line_num;
   
   union {
     struct {

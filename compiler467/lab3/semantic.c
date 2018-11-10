@@ -26,7 +26,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 root_scope = snode_alloc(NULL);
                 curr_scope = root_scope;
             } else {
-                fprintf(errorFile, "[Error]Scope checking: root scope already exists;\n");
+                fprintf(errorFile, "Line %d: [Error]Scope checking: root scope already exists;\n", ast->line_num);
             }
             // Type checking and proceed to other node checkings...
             ast_semantic_check_help(ast->scope.declarations, curr_scope);
@@ -56,7 +56,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             // Scope checking, report error and set type to unknown if invalid.
             sentry* candidate_sentry = ast_node_to_sentry(ast);
             if (!scope_check_var_declaration_valid(ast, curr_scope)) {
-                fprintf(errorFile, "[Error]Scope checking: var declaration for %s not valid, changing stype to UNKNOWN\n", ast->declaration.id);
+                fprintf(errorFile, "Line %d: [Error]Scope checking: var declaration for %s not valid, changing stype to UNKNOWN\n", ast->line_num, ast->declaration.id);
                 candidate_sentry->stype = UNKNOWN_TYPE;
                 candidate_sentry->valid = false;
                 errorOccurred = true;
@@ -65,7 +65,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             // Check for predef var redeclarations
             predef_var* pvar = get_predef_var_by_id(ast->declaration.id);
             if (pvar) {
-                fprintf(errorFile, "[Error]Scope checking: var declaration of %s overlaps with a pre-defined variable.\n", ast->declaration.id);
+                fprintf(errorFile, "Line %d: [Error]Scope checking: var declaration of %s overlaps with a pre-defined variable.\n", ast->line_num, ast->declaration.id);
                 free(pvar);
                 pvar = NULL;
                 errorOccurred = true;
@@ -86,7 +86,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 if (!expr_readable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand: [DECLARATION]: expr write-only\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand: [DECLARATION]: expr write-only\n", ast->line_num);
                 } else {
                     //TODO: add for the uniform type as well
                     int var_is_const = ast->declaration.is_const;
@@ -94,7 +94,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                     if (var_is_const && !expr_is_const) {
                         errorOccurred = true;
                         ast->inferred_type.type_name = ANY;
-                        fprintf(errorFile, "[Error]Semantic-check: Bad operand: [DECLARATION]: assign const variable non_const values\n");
+                        fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand: [DECLARATION]: assign const variable non_const values\n", ast->line_num);
                     }
                 }
             }
@@ -115,14 +115,14 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             sentry* var_entry = find_var_reference_by_id(ast->var_node.id, curr_scope);
             predef_var* pvar = get_predef_var_by_id(ast->var_node.id);
             if (!var_entry && !pvar) {
-                fprintf(errorFile, "[Error]Scope checking: variable %s was not declared before use\n", ast->var_node.id);
+                fprintf(errorFile, "Line %d: [Error]Scope checking: variable %s was not declared before use\n", ast->line_num, ast->var_node.id);
                 ast->inferred_type.type_name = ANY;
                 errorOccurred = true;
             } else if (pvar) {
                 if (ast->var_node.vec_idx != -1) {
                     //e.g. gl_Material_Shininess[0]
                     if (ast->var_node.vec_idx < 0 || ast->var_node.vec_idx >= pvar->vec_size) {
-                        fprintf(errorFile, "[Error]Semantic-check: Bad operand: [VAR]: index out of bound\n");
+                        fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand: [VAR]: index out of bound\n", ast->line_num);
                         ast->inferred_type.type_name = ANY;
                         errorOccurred = true;
                     } else {
@@ -140,14 +140,14 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                     ast->inferred_type.vec_size = pvar->vec_size;
                 }
             } else if (!var_entry->valid || var_entry->stype == UNKNOWN_TYPE) {
-                fprintf(errorFile, "[Error]Scope checking: reference to INVALID variable %s. possibly not successfully declared.\n", ast->var_node.id);
+                fprintf(errorFile, "Line %d: [Error]Scope checking: reference to INVALID variable %s. possibly not successfully declared.\n", ast->line_num, ast->var_node.id);
                 ast->inferred_type.type_name = ANY;
                 errorOccurred = true;
             } else {
                 if (ast->var_node.vec_idx != -1) {
                     //e.g.f[0]
                     if (ast->var_node.vec_idx < 0 || ast->var_node.vec_idx >= var_entry->vec_size) {
-                        fprintf(errorFile, "[Error]Semantic-check: Bad operand: [VAR]: index out of bound\n");
+                        fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand: [VAR]: index out of bound\n", ast->line_num);
                         ast->inferred_type.type_name = ANY;
                         errorOccurred = true;
                     } else {
@@ -205,11 +205,11 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 if (right_type != BOOL) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [UNARY]!: operand must be BOOL type\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [UNARY]!: operand must be BOOL type\n", ast->line_num);
                 }  else if (!right_readable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [UNARY]!: operand write-only\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [UNARY]!: operand write-only\n", ast->line_num);
                 } else {
                     if (ast->unary_expr.right->inferred_type.is_vec) {
                         ast->inferred_type.type_name = right_type;
@@ -227,11 +227,11 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 if (right_type == BOOL || right_type == ANY) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [UNARY]-: operand must be arithmetic types\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [UNARY]-: operand must be arithmetic types\n", ast->line_num);
                 } else if (!right_readable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [UNARY]!: operand write-only\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [UNARY]!: operand write-only\n", ast->line_num);
                 } else {
                     if (ast->unary_expr.right->inferred_type.is_vec) {
                         ast->inferred_type.type_name = right_type;
@@ -246,7 +246,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 }
             } else {
                 errorOccurred = true;
-                fprintf(errorFile, "[Error]Semantic-check: Unknown unary type\n");
+                fprintf(errorFile, "Line %d: [Error]Semantic-check: Unknown unary type\n", ast->line_num);
             }
         }
             break;
@@ -280,23 +280,23 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 if (!left_readable || !right_readable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]&&, ||: 1+ operands are write-only\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]&&, ||: 1+ operands are write-only\n", ast->line_num);
                 } else if (left_type != BOOL || right_type != BOOL) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]&&, ||: both operand must be BOOL\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]&&, ||: both operand must be BOOL\n", ast->line_num);
                 } else {
                     if (left_is_vec != right_is_vec) {
                         errorOccurred = true;
                         ast->inferred_type.type_name = ANY;
-                        fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]&&, ||: operands type incompatible\n");
+                        fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]&&, ||: operands type incompatible\n", ast->line_num);
                     } else {
                         if (left_is_vec) {
                             //vv
                             if (left_vec_size != right_vec_size) {
                                 errorOccurred = true;
                                 ast->inferred_type.type_name = ANY;
-                                fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]&&, ||: vector with different size\n");
+                                fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]&&, ||: vector with different size\n", ast->line_num);
                             } else {
                                 ast->inferred_type.type_name = left_type;
                                 ast->inferred_type.is_vec = 1;
@@ -321,21 +321,21 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 if (!left_readable || !right_readable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: 1+ operands are write-only\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: 1+ operands are write-only\n", ast->line_num);
                 } else if ((left_type != right_type) 
                         || (left_type == ANY || right_type == ANY)) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: cannot compare with different types\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: cannot compare with different types\n", ast->line_num);
                 } else if (left_type == BOOL || right_type == BOOL) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: operand must be arithmetic types\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: operand must be arithmetic types\n", ast->line_num);
                 } else {
                     if (left_is_vec || right_is_vec) {
                         errorOccurred = true;
                         ast->inferred_type.type_name = ANY;
-                        fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: both operand must be scalar\n");
+                        fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: both operand must be scalar\n", ast->line_num);
                     } else {
                         ast->inferred_type.type_name = BOOL;
                         ast->inferred_type.is_vec = 0;
@@ -350,27 +350,27 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 if (!left_readable || right_readable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]==, !=: 1+ operands are write-only\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]==, !=: 1+ operands are write-only\n", ast->line_num);
                 } else if ((left_type != right_type) 
                         || (left_type == ANY || right_type == ANY)) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]==, !=: cannot compare with different types\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]==, !=: cannot compare with different types\n", ast->line_num);
                 } else if (left_type == BOOL || right_type == BOOL) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: operand must be arithmetic types\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: operand must be arithmetic types\n", ast->line_num);
                 } else {
                     if (left_is_vec != right_is_vec) {
                         errorOccurred = true;
                         ast->inferred_type.type_name = ANY;
-                        fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: cannot compare vector with scalar\n");
+                        fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: cannot compare vector with scalar\n", ast->line_num);
                     } else if (left_is_vec) {
                         //vv
                         if (left_vec_size != right_vec_size) {
                             errorOccurred = true;
                             ast->inferred_type.type_name = ANY;
-                            fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: vector with different sizes\n");
+                            fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: vector with different sizes\n", ast->line_num);
                         } else {
                             ast->inferred_type.type_name = BOOL;
                             ast->inferred_type.is_vec = 0;
@@ -391,23 +391,23 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 if (!left_readable || !right_readable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]+, -: 1+ operands are write-only\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]+, -: 1+ operands are write-only\n", ast->line_num);
                 } else if ((left_type == BOOL || right_type == BOOL) 
                         || (left_type == ANY || right_type == ANY)) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]+, -: both operand must not be BOOL\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]+, -: both operand must not be BOOL\n", ast->line_num);
                 } else if (left_type == right_type) {
                     if (left_is_vec != right_is_vec) {
                         errorOccurred = true;
                         ast->inferred_type.type_name = ANY;
-                        fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]+, -: operand type incompatible\n");
+                        fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]+, -: operand type incompatible\n", ast->line_num);
                     } else {
                         if (left_is_vec) {
                             if (left_vec_size != right_vec_size) {
                                 errorOccurred = true;
                                 ast->inferred_type.type_name = ANY;
-                                fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]+, -: vector with different size\n");
+                                fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]+, -: vector with different size\n", ast->line_num);
                             } else {
                                 ast->inferred_type.type_name = left_type;
                                 ast->inferred_type.is_vec = 1;
@@ -424,7 +424,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 } else {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]+, -: operands not the same type\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]+, -: operands not the same type\n", ast->line_num);
                 }
             } 
             
@@ -433,16 +433,16 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 if (!left_readable || !right_readable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]*: 1+ operands are write-only\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]*: 1+ operands are write-only\n", ast->line_num);
                 } else if (left_type == BOOL || right_type == BOOL) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]*: both operand must not be BOOL\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]*: both operand must not be BOOL\n", ast->line_num);
                 } else if (left_type == right_type) {
                     if (left_type == ANY || right_type == ANY) {
                         errorOccurred = true;
                         ast->inferred_type.type_name = ANY;
-                        fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]*: operand(s) invalid\n");
+                        fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]*: operand(s) invalid\n", ast->line_num);
                     } else {
                         if (!left_is_vec && !right_is_vec) {
                             //ss
@@ -466,7 +466,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                             if (left_vec_size != right_vec_size) {
                                 errorOccurred = true;
                                 ast->inferred_type.type_name = ANY;
-                                fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]*: multiple vectors with different sizes\n");
+                                fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]*: multiple vectors with different sizes\n", ast->line_num);
                             } else {
                                 ast->inferred_type.type_name = left_type;
                                 ast->inferred_type.is_vec = 1;
@@ -478,7 +478,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 } else {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]*: operands not the same type\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]*: operands not the same type\n", ast->line_num);
                 }
             } 
             
@@ -488,16 +488,16 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 if (!left_readable || !right_readable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]/, ^: 1+ operands are write-only\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]/, ^: 1+ operands are write-only\n", ast->line_num);
                 } else if (left_type == BOOL || right_type == BOOL) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]/, ^: both operand must not be BOOL\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]/, ^: both operand must not be BOOL\n", ast->line_num);
                 } else if (left_type == right_type) {
                     if (left_is_vec || right_is_vec) {
                         errorOccurred = true;
                         ast->inferred_type.type_name = ANY;
-                        fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]/, ^: both operand must be scalar\n");
+                        fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]/, ^: both operand must be scalar\n", ast->line_num);
                     } else {
                         ast->inferred_type.type_name = left_type;
                         ast->inferred_type.is_vec = 0;
@@ -505,7 +505,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                     }
                 } else {
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [BINARY]/, ^: operands not the same type\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]/, ^: operands not the same type\n", ast->line_num);
                 }
             }
         }
@@ -518,11 +518,11 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             if (ast->if_statement_node.if_condition->inferred_type.type_name != BOOL) {
                 errorOccurred = true;
                 ast->inferred_type.type_name = ANY;
-                fprintf(errorFile, "[Error]Semantic-check: Bad expr type: [IF]: if expr must be evaluated to BOOL type\n");
+                fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad expr type: [IF]: if expr must be evaluated to BOOL type\n", ast->line_num);
             } else {
                 if (ast->if_statement_node.if_condition->inferred_type.is_vec) {
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad expr type: [IF]: if condition cannot be bvec type\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad expr type: [IF]: if condition cannot be bvec type\n", ast->line_num);
                 } else {
                     ast->inferred_type.type_name = BOOL;
                 }
@@ -559,28 +559,28 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             if (!var_is_writable) {
                 errorOccurred = true;
                 ast->inferred_type.type_name = ANY;
-                fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [Assignment]: var read-only\n");
+                fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [Assignment]: var read-only\n", ast->line_num);
             } else if (!expr_is_readable) {
                 errorOccurred = true;
                 ast->inferred_type.type_name = ANY;
-                fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [Assignment]: expr write-only\n");
+                fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [Assignment]: expr write-only\n", ast->line_num);
             } else if (var_type != expr_type) {
                 errorOccurred = true;
                 ast->inferred_type.type_name = ANY;
-                fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [Assignment]: operands with different type\n");
+                fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [Assignment]: operands with different type\n", ast->line_num);
             } else {
                 if (var_is_vec != expr_is_vec) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [Assignment]: vector and scalar incompatible\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [Assignment]: vector and scalar incompatible\n", ast->line_num);
                 } else if (var_vec_size != expr_vec_size && (var_vec_size != -1 && expr_vec_size == 0)) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [Assignment]: vector with different sizes\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [Assignment]: vector with different sizes\n", ast->line_num);
                 } else if (var_is_const && !expr_is_const) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad operand type: [Assignment]: var of const type\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [Assignment]: var of const type\n", ast->line_num);
                 } else {
                     ast->inferred_type.type_name = var_type;
                     ast->inferred_type.is_vec = var_is_vec;
@@ -611,7 +611,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             break;
     
         default:
-            fprintf(errorFile, "[debug]AST Semantic check: unknown AST node\n");
+            fprintf(errorFile, "Line %d: [Error]AST Semantic check: unknown AST node\n", ast->line_num);
             break;
     }
 }
@@ -633,7 +633,7 @@ sentry* find_var_reference_by_id(char* id, snode* curr_scope) {
 bool scope_check_var_declaration_valid(node* ast, snode* curr_scope) {
     if (!curr_scope || !ast) return 0;
     if (ast->kind != DECLARATION_NODE) {
-        fprintf(errorFile, "[Error]Scope checking: ast node checked is not a declaration.\n");
+        fprintf(errorFile, "Line %d: [Error]Scope checking: ast node checked is not a declaration.\n", ast->line_num);
     }
     return find_sentry_in_snode_by_id(ast->declaration.id, curr_scope) ? 0 : 1; // NOT valid if found!!!
 }
@@ -641,7 +641,7 @@ bool scope_check_var_declaration_valid(node* ast, snode* curr_scope) {
 // return 1 if error occurs, 0 if succeed.
 bool semantic_check_constructor_call(node* cstr_stmt) {
     if (cstr_stmt == NULL) {
-        fprintf(errorFile, "[Error]Semantic-check: Constructor node is NULL\n");
+        fprintf(errorFile, "Line %d: [Error]Semantic-check: Constructor node is NULL\n", cstr_stmt->line_num);
         return 1;
     }
     bool err = false;
@@ -653,7 +653,7 @@ bool semantic_check_constructor_call(node* cstr_stmt) {
     int args_count = 0;
     node* curr_args = cstr_stmt->constructor.args;
     if (!curr_args) {
-        fprintf(errorFile, "[Error]Semantic-check: Constructor has no args.\n");
+        fprintf(errorFile, "Line %d: [Error]Semantic-check: Constructor has no args.\n", cstr_stmt->line_num);
         // Record inferred return type to constructor node.
         cstr_stmt->inferred_type.type_name = ANY;
         cstr_stmt->inferred_type.is_vec = is_vec;
@@ -668,21 +668,21 @@ bool semantic_check_constructor_call(node* cstr_stmt) {
         // Check if each arg has same type as constructor, then check arg count matches
         struct node_type curr_arg_type = curr_arg_expr->inferred_type;
         if (curr_arg_type.is_vec) {
-            fprintf(errorFile, "[Error]Semantic-check: Constructor argument %d should not be a vector.\n", args_count);
+            fprintf(errorFile, "Line %d: [Error]Semantic-check: Constructor argument %d should not be a vector.\n", cstr_stmt->line_num, args_count);
             err = true;
         }
         if (curr_arg_type.type_name != cstr_type_id) {
-            fprintf(errorFile, "[Error]Semantic-check: Constructor argument %d has type %s, expecting %s.\n", args_count,
+            fprintf(errorFile, "Line %d: [Error]Semantic-check: Constructor argument %d has type %s, expecting %s.\n", cstr_stmt->line_num, args_count,
                     get_type_id_name(curr_arg_type.type_name), get_type_id_name(cstr_type_id));
             err = true;
         }
         curr_args = curr_args->args_node.args;
     }
     if (!is_vec && args_count != 1) {
-        fprintf(errorFile, "[Error]Semantic-check: Constructor expects exactly 1 argument, actually passing in %d.\n", args_count);
+        fprintf(errorFile, "Line %d: [Error]Semantic-check: Constructor expects exactly 1 argument, actually passing in %d.\n", cstr_stmt->line_num, args_count);
         err = true;
     } else if (is_vec && args_count != vec_size) {
-        fprintf(errorFile, "[Error]Semantic-check: Constructor expects exactly %d arguments, actually passing in %d.\n", vec_size, args_count);
+        fprintf(errorFile, "Line %d: [Error]Semantic-check: Constructor expects exactly %d arguments, actually passing in %d.\n", cstr_stmt->line_num, vec_size, args_count);
         err = true;
     }
     
@@ -697,7 +697,7 @@ bool semantic_check_constructor_call(node* cstr_stmt) {
 // return 1 if error occurs, 0 if succeed.
 bool semantic_check_function_call(node* func_call) {
     if (func_call == NULL) {
-        fprintf(errorFile, "[Error]Semantic-check: Function node is NULL\n");
+        fprintf(errorFile, "Line %d: [Error]Semantic-check: Function node is NULL\n", func_call->line_num);
         return 1;
     }
     bool err = false;
@@ -748,7 +748,7 @@ bool semantic_check_function_call(node* func_call) {
             break;
         default:
         {
-            fprintf(errorFile, "[error]Semantic-check: Unsupported func call to %s\n", func_call->function.func_id);
+            fprintf(errorFile, "Line %d: [Error]Semantic-check: Unsupported func call to %s\n", func_call->line_num, func_call->function.func_id);
             // Record inferred type into func_call node.
             func_call->inferred_type.type_name = ANY;
             func_call->inferred_type.is_vec = return_val_is_vec;
@@ -764,7 +764,7 @@ bool semantic_check_function_call(node* func_call) {
     type_id first_arg_vec_type = ANY;
     node* curr_args = func_call->function.args;
     if (!curr_args) {
-        fprintf(errorFile, "[Error]Semantic-check: Function has no args.\n");
+        fprintf(errorFile, "Line %d: [Error]Semantic-check: Function has no args.\n", func_call->line_num);
         // Record inferred return type to Func node.
         func_call->inferred_type.type_name = ANY;
         func_call->inferred_type.is_vec = return_val_is_vec;
@@ -780,14 +780,14 @@ bool semantic_check_function_call(node* func_call) {
         struct node_type curr_arg_type = curr_arg_expr->inferred_type;
         if (curr_arg_type.is_vec != expected_arg_is_vec) {
             // Expecting a vector/scalar argument but passed in arg is not.
-            fprintf(errorFile, "[Error]Semantic-check: Function call to %s expects %svectors, but argument %d is %sa vector.\n", func_call->function.func_id,
+            fprintf(errorFile, "Line %d: [Error]Semantic-check: Function call to %s expects %svectors, but argument %d is %sa vector.\n", func_call->line_num, func_call->function.func_id,
                     expected_arg_is_vec ? "" : "no ", args_count, curr_arg_type.is_vec ? "" : "not ");
             err = true;
         }
         if (curr_arg_type.is_vec && expected_arg_is_vec // This is printed only if expecting a vector(but passed in wrong size).
                 && curr_arg_type.vec_size != expected_arg_vec_size_1
                 && curr_arg_type.vec_size != expected_arg_vec_size_2) {
-            fprintf(errorFile, "[Error]Semantic-check: Function call to %s has argument vector %d with size %d, expecting size %d",
+            fprintf(errorFile, "Line %d: [Error]Semantic-check: Function call to %s has argument vector %d with size %d, expecting size %d", func_call->line_num,
                     func_call->function.func_id, args_count, curr_arg_type.vec_size, expected_arg_vec_size_1);
             if (expected_arg_vec_size_1 != expected_arg_vec_size_2) {
                 fprintf(errorFile, " or %d", expected_arg_vec_size_2);
@@ -801,7 +801,7 @@ bool semantic_check_function_call(node* func_call) {
                         (expected_arg_type == NUMBER
                            && curr_arg_type.type_name != INT
                            && curr_arg_type.type_name != FLOAT))) {
-            fprintf(errorFile, "[Error]Semantic-check: Function call to %s has argument %d as a %s%s, expecting %s%s.\n",
+            fprintf(errorFile, "Line %d: [Error]Semantic-check: Function call to %s has argument %d as a %s%s, expecting %s%s.\n", func_call->line_num,
                     func_call->function.func_id, args_count, get_type_id_name(curr_arg_type.type_name),
                     curr_arg_type.is_vec ? " vector" : "",
                     expected_arg_type == NUMBER ? "int or float" : get_type_id_name(expected_arg_type),
@@ -816,7 +816,7 @@ bool semantic_check_function_call(node* func_call) {
         } 
         if (first_arg_vec_size != -1 && first_arg_vec_type != ANY && curr_arg_type.is_vec && !err) {
             if (curr_arg_type.vec_size != first_arg_vec_size || curr_arg_type.type_name != first_arg_vec_type) {
-                fprintf(errorFile, "[Error]Semantic-check: Function call seems valid so far, but argument %d is a vector with inconsistent",
+                fprintf(errorFile, "Line %d: [Error]Semantic-check: Function call seems valid so far, but argument %d is a vector with inconsistent", func_call->line_num,
                     args_count);
                 if (curr_arg_type.vec_size != first_arg_vec_size) fprintf(errorFile, " size");
                 if (curr_arg_type.vec_size != first_arg_vec_size && curr_arg_type.type_name != first_arg_vec_type) fprintf(errorFile, " and");
@@ -830,7 +830,7 @@ bool semantic_check_function_call(node* func_call) {
         curr_args = curr_args->args_node.args;
     }
     if (expected_args_count != args_count) {
-        fprintf(errorFile, "[Error]Semantic-check: Function call to %s expects exactly %d arguments, actually passing in %d.\n",
+        fprintf(errorFile, "Line %d: [Error]Semantic-check: Function call to %s expects exactly %d arguments, actually passing in %d.\n", func_call->line_num,
                 func_call->function.func_id, expected_args_count, args_count);
         err = true;
     }
@@ -869,7 +869,7 @@ predef_var* alloc_predef_var(char* id, type_class clazz, type_id type_name, bool
             pvar->is_writable = 1;
             break;
         default:
-            fprintf(errorFile, "[error]Semantic-check: Declaration of predef var %s failed with unknown class %d\n", id, clazz);
+            fprintf(errorFile, "[Error]Semantic-check: Declaration of predef var %s failed with unknown class %d\n", id, clazz);
             free(pvar);
             return NULL;
     }

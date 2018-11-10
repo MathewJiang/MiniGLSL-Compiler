@@ -28,23 +28,27 @@ node *ast_allocate(node_kind kind, ...) {
         case SCOPE_NODE:
             ast->scope.declarations = va_arg(args, node *);
             ast->scope.statements = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "\tSCOPE_NODE\n");
             break;
 
           case NESTED_SCOPE_NODE:
             ast->nested_scope.scope = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "\tNESTED_SCOPE_NODE\n");
             break;
     
         case DECLARATIONS_NODE:
             ast->declarations.declarations = va_arg(args, node *);
             ast->declarations.declaration = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "\tDECLARATIONS_NODE\n");
             break;
             
         case STATEMENTS_NODE:
             ast->statements.statements = va_arg(args, node *);
             ast->statements.statement = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "\tSTATEMENTS_NODE\n");
             break;
 
@@ -58,22 +62,26 @@ node *ast_allocate(node_kind kind, ...) {
             ast->declaration.id = va_arg(args, char*);
 //            printf("[debug]ast->declaration.id: %s\n", ast->declaration.id);
             ast->declaration.expr = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "\tDECLARATION_NODE\n");
             break;
 
         case ASSIGNMENT_STATEMENT_NODE:
             ast->assign_statement.var = va_arg(args, node *);
             ast->assign_statement.expr = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             break;
             
         case IF_STATEMENT_NODE:
             ast->if_statement_node.if_condition = va_arg(args, node *);
             ast->if_statement_node.statement = va_arg(args, node *);
             ast->if_statement_node.else_statement = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             break;
             
         case ELSE_STATEMENT_NODE:
             ast->else_statement_node.else_statement = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             break;
 
         case TYPE_NODE:
@@ -81,6 +89,7 @@ node *ast_allocate(node_kind kind, ...) {
 //            strcpy(temp_str, va_arg(args, char*));
             ast->type_node.type_name = va_arg(args, char *);
             ast->type_node.is_vec = va_arg(args, int);
+            ast->line_num = va_arg(args, int);
             ast->type_node.vec_size = -1;
             if (ast->type_node.is_vec) {
                 switch (ast->type_node.type_name[0]) {
@@ -102,11 +111,13 @@ node *ast_allocate(node_kind kind, ...) {
 
         case INT_NODE:
             ast->int_val = va_arg(args, int);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "Allocating int node with val=%d\n", ast->int_val);
             break;
 
         case FLOAT_NODE:
             ast->float_val = va_arg(args, double);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "Allocating float node with val=%.2lf\n", ast->float_val);
             break;
 
@@ -116,6 +127,7 @@ node *ast_allocate(node_kind kind, ...) {
             } else {
                 ast->bool_val = 1;
             }
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "Allocating bool node with val=%d\n", ast->bool_val);
             break;
 
@@ -125,6 +137,7 @@ node *ast_allocate(node_kind kind, ...) {
             ast->var_node.id = va_arg(args, char*);
             ast->var_node.is_vec = va_arg(args, int);
             ast->var_node.vec_idx = (ast->var_node.is_vec) ? (va_arg(args, int)) : (-1);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "Allocating var node with id=%s, is_vec=%d, vec_idx=%d\n",
                     ast->var_node.id, ast->var_node.is_vec, ast->var_node.vec_idx);
             break;
@@ -132,6 +145,7 @@ node *ast_allocate(node_kind kind, ...) {
         case UNARY_EXPRESSION_NODE:
             ast->unary_expr.op = va_arg(args, int);
             ast->unary_expr.right = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "Allocating unary exp node, op=%d\n", ast->unary_expr.op);
             break;
 
@@ -139,6 +153,7 @@ node *ast_allocate(node_kind kind, ...) {
             ast->binary_expr.op = va_arg(args, int);
             ast->binary_expr.left = va_arg(args, node *);
             ast->binary_expr.right = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "Allocating binary exp node, op=%d\n", ast->binary_expr.op);
             break;
 
@@ -148,18 +163,21 @@ node *ast_allocate(node_kind kind, ...) {
 //            strcpy(temp_str, va_arg(args, char*));
             ast->function.func_id = va_arg(args, char*);
             ast->function.args = va_arg(args, node*);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "[ast_allocate]FUNCTION_NODE: func_id: %s\n", ast->function.func_id);
             break;
 
         case CONSTRUCTOR_NODE:
             ast->constructor.type = va_arg(args, node *);
             ast->constructor.args = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             debugP(VB_TRACE, "[ast_allocate]CONSTRUCTOR_NODE: type: %s\n", ast->constructor.type);
             break;
             
         case ARGS_NODE:
             ast->args_node.expr = va_arg(args, node *);
             ast->args_node.args = va_arg(args, node *);
+            ast->line_num = va_arg(args, int);
             break;
 
         default: break;
@@ -659,7 +677,6 @@ void print_type_id(type_id type_name, int is_vec, int vec_index, int is_const) {
             break;
         case BOOL:
             if (is_vec) {
-                fprintf(dumpFile, "bvec%d ", vec_index);
                 fprintf(dumpFile, "bvec%d ", vec_index);
             } else {
                 fprintf(dumpFile, "bool ");
