@@ -73,13 +73,33 @@ typedef enum {
     UNKNOWN_FUNC = 80000000
 }func_id;
 
+typedef enum {
+    ATTRIBUTE = 1000,
+    UNIFORM = 2000,
+    RESULT = 3000,
+    UNDEF = 4000
+}type_class;
+
 struct node_type {
     type_id type_name = ANY;
     int is_vec = 0;
     int vec_size = -1;
     int is_const = 0;
+    struct predef_var* predef_info;
 };
 typedef struct node_type node_type;
+
+struct predef_var {
+    char* id;
+    type_class clazz = UNDEF;
+    type_id type_name = ANY;
+    bool is_const = 0;
+    bool is_writable = 0;
+    bool is_readable = 0;
+    bool is_vec = 0;
+    int vec_size = 0;
+};
+typedef struct predef_var predef_var;
 
 
 struct node_ {

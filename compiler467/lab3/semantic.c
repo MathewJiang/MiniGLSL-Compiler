@@ -59,7 +59,19 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 printf("[error]Scope checking: var declaration for %s not valid, changing stype to UNKNOWN\n", ast->declaration.id);
                 candidate_sentry->stype = UNKNOWN_TYPE;
                 candidate_sentry->valid = false;
+                errorOccurred = true;
             }
+            
+            // Check for predef var redeclarations
+            predef_var* pvar = get_predef_var_by_id(ast->declaration.id);
+            if (pvar) {
+                printf("[error]Scope checking: var declaration of %s overlaps with a pre-defined variable.\n", ast->declaration.id);
+                free(pvar);
+                pvar = NULL;
+                errorOccurred = true;
+                break;
+            }
+            
             // Add candidate to scope table
             sentry_push(candidate_sentry, curr_scope);
             snode_print(curr_scope);
@@ -82,12 +94,19 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
         {
             // Check if the variable has been declared before reaching here.
             sentry* var_entry = find_var_reference_by_id(ast->var_node.id, curr_scope);
-            if (!var_entry) {
+            predef_var* pvar = get_predef_var_by_id(ast->var_node.id);
+            if (!var_entry && !pvar) {
                 printf("[error]Scope checking: variable %s was not declared before use\n", ast->var_node.id);
                 ast->inferred_type.type_name = ANY;
                 errorOccurred = true;
+            } else if (pvar) {
+                ast->inferred_type.predef_info = pvar;
+                ast->inferred_type.type_name = pvar->type_name;
+                ast->inferred_type.is_const = pvar->is_const;
+                ast->inferred_type.is_vec = pvar->is_vec;
+                ast->inferred_type.vec_size = pvar->vec_size;
             } else if (!var_entry->valid || var_entry->stype == UNKNOWN_TYPE) {
-                printf("[error]Scope checking: reference to INVALID variable %s. possibly undeclared successfully.\n", ast->var_node.id);
+                printf("[error]Scope checking: reference to INVALID variable %s. possibly not successfully declared.\n", ast->var_node.id);
                 ast->inferred_type.type_name = ANY;
                 errorOccurred = true;
             } else {
@@ -711,4 +730,69 @@ bool semantic_check_function_call(node* func_call) {
     func_call->inferred_type.vec_size = return_val_vec_size;
     func_call->inferred_type.is_const = return_val_is_const;
     return err;
+}
+
+predef_var* alloc_predef_var(char* id, type_class clazz, type_id type_name, bool is_vec, int vec_size) {
+    predef_var* pvar = (predef_var*)malloc(sizeof(predef_var));
+    
+    pvar->id = id;
+    pvar->clazz = clazz;
+    pvar->type_name = type_name;
+    pvar->is_vec = is_vec;
+    pvar->vec_size = vec_size;
+    
+    switch (clazz) {
+        case ATTRIBUTE: // Read only, non-const
+            pvar->is_const = 0;
+            pvar->is_readable = 1;
+            pvar->is_writable = 0;
+            break;
+        case UNIFORM:
+            pvar->is_const = 1;
+            pvar->is_readable = 1;
+            pvar->is_writable = 0;
+            break;
+        case RESULT:
+            pvar->is_const = 0;
+            pvar->is_readable = 0;
+            pvar->is_writable = 1;
+            break;
+        default:
+            printf("[error]Semantic-check: Declaration of predef var %s failed with unknown class %d\n", id, clazz);
+            free(pvar);
+            return NULL;
+    }
+    return pvar;
+}
+
+predef_var* get_predef_var_by_id(char* id) {
+    if (!id) return NULL;
+    if (!strcmp(id, "gl_FragColor")) {
+        return alloc_predef_var(id, RESULT, FLOAT, true, 4);
+    } else if (!strcmp(id, "gl_FragDepth")) {
+        return alloc_predef_var(id, RESULT, BOOL, false, -1);
+    } else if (!strcmp(id, "gl_FragCoord")) {
+        return alloc_predef_var(id, RESULT, FLOAT, true, 4);
+    } else if (!strcmp(id, "gl_TexCoord")) {
+        return alloc_predef_var(id, ATTRIBUTE, FLOAT, true, 4);
+    } else if (!strcmp(id, "gl_Color")) {
+        return alloc_predef_var(id, ATTRIBUTE, FLOAT, true, 4);
+    } else if (!strcmp(id, "gl_Secondary")) {
+        return alloc_predef_var(id, ATTRIBUTE, FLOAT, true, 4);
+    } else if (!strcmp(id, "gl_FogFragCoord")) {
+        return alloc_predef_var(id, ATTRIBUTE, FLOAT, true, 4);
+    } else if (!strcmp(id, "gl_Light_Half")) {
+        return alloc_predef_var(id, UNIFORM, FLOAT, true, 4);
+    } else if (!strcmp(id, "gl_Light_Ambient")) {
+        return alloc_predef_var(id, UNIFORM, FLOAT, true, 4);
+    } else if (!strcmp(id, "gl_Material_SHininess")) {
+        return alloc_predef_var(id, UNIFORM, FLOAT, true, 4);
+    } else if (!strcmp(id, "env1")) {
+        return alloc_predef_var(id, UNIFORM, FLOAT, true, 4);
+    } else if (!strcmp(id, "env2")) {
+        return alloc_predef_var(id, UNIFORM, FLOAT, true, 4);
+    } else if (!strcmp(id, "env3")) {
+        return alloc_predef_var(id, UNIFORM, FLOAT, true, 4);
+    }
+    return NULL;
 }
