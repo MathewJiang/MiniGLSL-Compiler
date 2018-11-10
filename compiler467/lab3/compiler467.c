@@ -1,6 +1,8 @@
 /***********************************************************************
  * **YOUR GROUP INFO SHOULD GO HERE**
  *
+ * Shifan Gu: 1001568109
+ * Zheping Jiang: 1001133677
  * compiler467.c
  *
  * This is the main driver program for the CSC467F course project

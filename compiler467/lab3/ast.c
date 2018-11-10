@@ -56,7 +56,7 @@ node *ast_allocate(node_kind kind, ...) {
 //            strcpy(temp_str, va_arg(args, char *));
 //            printf("[debug]ast->declaration.id: %s\n", temp_str);
             ast->declaration.id = va_arg(args, char*);
-            printf("[debug]ast->declaration.id: %s\n", ast->declaration.id);
+//            printf("[debug]ast->declaration.id: %s\n", ast->declaration.id);
             ast->declaration.expr = va_arg(args, node *);
             debugP(VB_TRACE, "\tDECLARATION_NODE\n");
             break;
@@ -174,7 +174,7 @@ void ast_free(node *ast) {
     //TODO: do a recursive free (post-function)
     ast_destroy_help(ast);
     ast = NULL;
-    printf("Successfully deallocated AST.\n");
+    printf("\nSuccessfully deallocated AST.\n");
 }
 
 void ast_destroy_help(node *ast) {
@@ -302,21 +302,23 @@ void ast_print_help(node *ast, int indent_num) {
     switch (kind) {
         case SCOPE_NODE:
             indent(indent_num);
-            printf("(");
-            printf("SCOPE ");
+            fprintf(dumpFile, "(");
+            fprintf(dumpFile, "SCOPE ");
+            
             if (ast->scope.declarations != NULL) {
                 ast_print_help(ast->scope.declarations, indent_num);
             }
             if (ast->scope.statements != NULL) {
                 ast_print_help(ast->scope.statements, indent_num);
             }
-            printf(")\n");
+            fprintf(dumpFile, ")\n");
             break;
             
         case NESTED_SCOPE_NODE:
             indent(indent_num);
-            printf("(");
-            printf("NESTED_SCOPE ");
+            fprintf(dumpFile, "(");
+            fprintf(dumpFile, "NESTED_SCOPE ");
+            
             if (!ast->nested_scope.scope) {
                 perror("\n[error]Nested scope: lacks scope\n");
                 exit(1);
@@ -328,34 +330,35 @@ void ast_print_help(node *ast, int indent_num) {
             if (ast->nested_scope.scope->scope.statements != NULL) {
                 ast_print_help(ast->nested_scope.scope->scope.statements, indent_num);
             }
-            printf(")");
+            fprintf(dumpFile, ")");
             break;
             
         case DECLARATIONS_NODE:
             indent(indent_num);
-            printf("(");
-            printf("DECLARATIONS ");
+            fprintf(dumpFile, "(");
+            fprintf(dumpFile, "DECLARATIONS ");
+            
             if (ast->declarations.declarations != NULL) {
                 ast_print_help(ast->declarations.declarations, indent_num);
             }
             if (ast->declarations.declaration != NULL) {
                 ast_print_help(ast->declarations.declaration, indent_num);
             }
-            printf(")");
+            fprintf(dumpFile, ")");
             break;
 
         case DECLARATION_NODE:
             indent(indent_num);
-            printf("(");
-            printf("DECLARATION ");
+            fprintf(dumpFile, "(");
+            fprintf(dumpFile, "DECLARATION ");
 
             if (ast->declaration.id != NULL) {
                 //FIXME: error-prone
-                printf("%s ", ast->declaration.id);
+                fprintf(dumpFile, "%s ", ast->declaration.id);
             }
 
             if (ast->declaration.is_const == 1) {
-                printf("CONST ");
+                fprintf(dumpFile, "const ");
             }
             if (ast->declaration.type != NULL) {
                 ast_print_help(ast->declaration.type, indent_num);
@@ -364,58 +367,59 @@ void ast_print_help(node *ast, int indent_num) {
             if (ast->declaration.expr != NULL) {
                 ast_print_help(ast->declaration.expr, indent_num);
             }
-            printf(")");
+            fprintf(dumpFile, ")");
             break;
             
         case STATEMENTS_NODE:
             indent(indent_num);
-            printf("(");
-            printf("STATEMENTS ");
+            fprintf(dumpFile, "(");
+            fprintf(dumpFile, "STATEMENTS ");
+            
             if (ast->statements.statements != NULL) {
                 ast_print_help(ast->statements.statements, indent_num);
             }
             if (ast->statements.statement != NULL) {
                 ast_print_help(ast->statements.statement, indent_num);
             }
-            printf(")");
+            fprintf(dumpFile, ")");
             break;
         
         case TYPE_NODE:
-            printf("(");
-            printf("TYPE ");
-            printf("%s", ast->type_node.type_name);
-            printf(") ");
+            fprintf(dumpFile, "(");
+            fprintf(dumpFile, "TYPE ");
+            fprintf(dumpFile, "%s", ast->type_node.type_name);
+            fprintf(dumpFile, ") ");
             break;
 
         case VAR_NODE:
             if (ast->var_node.is_vec) {
                 //FIXME: not necessarily need (INDEX)... e.g vec4_obj = vec4_obj
                 //print out the index if accessing array variable
-                printf("(INDEX ");
+                fprintf(dumpFile, "(INDEX ");
                 print_type_id(ast->inferred_type.type_name, ast->inferred_type.is_vec, 
                     ast->inferred_type.vec_size, ast->inferred_type.is_const);
-                printf("%s ", ast->var_node.id);
-                printf("%d)", ast->var_node.vec_idx);
+                fprintf(dumpFile, "%s ", ast->var_node.id);
+                fprintf(dumpFile, "%d) ", ast->var_node.vec_idx);
             } else {
-                printf("%s ", ast->var_node.id);
+                fprintf(dumpFile, "%s ", ast->var_node.id);
             }
             break;
 
         case INT_NODE:
-            printf("%d ", ast->int_val);
+            fprintf(dumpFile, "%d ", ast->int_val);
             break;
 
         case FLOAT_NODE:
-            printf("%.2lf ", ast->float_val);
+            fprintf(dumpFile, "%.2lf ", ast->float_val);
             break;
 
         case BOOL_NODE:
             //TODO: determine types for boolean variable
             //so that "true" or "false" will be printed
             if (ast->bool_val) {
-                printf("true ");
+                fprintf(dumpFile, "true ");
             } else {
-                printf("false ");
+                fprintf(dumpFile, "false ");
             }
             break;
             //            
@@ -423,7 +427,7 @@ void ast_print_help(node *ast, int indent_num) {
             //            break;
 
         case UNARY_EXPRESSION_NODE:
-            printf("(UNARY ");
+            fprintf(dumpFile, "(UNARY ");
             //TODO: determine the resulting type afterwards
             //printf("ANY ");
             print_type_id(ast->inferred_type.type_name, ast->inferred_type.is_vec, 
@@ -436,12 +440,12 @@ void ast_print_help(node *ast, int indent_num) {
                 perror("\n[error]lack of left operand for BINARY\n");
                 exit(1);
             }
-            printf(")");
+            fprintf(dumpFile, ")");
             break;
 
         case BINARY_EXPRESSION_NODE:
             indent(indent_num);
-            printf("(BINARY ");
+            fprintf(dumpFile, "(BINARY ");
             //TODO: determine the inferred type afterwards 
             print_type_id(ast->inferred_type.type_name, ast->inferred_type.is_vec, 
                     ast->inferred_type.vec_size, ast->inferred_type.is_const);
@@ -461,7 +465,7 @@ void ast_print_help(node *ast, int indent_num) {
                 perror("\n[error]lack of right operand for BINARY\n");
                 exit(1);
             }
-            printf(")");            
+            fprintf(dumpFile, ")");            
             break;
             
         case IF_STATEMENT_NODE:
@@ -474,14 +478,14 @@ void ast_print_help(node *ast, int indent_num) {
 //                exit(1);
 //            }
             indent(indent_num);
-            printf("(IF ");
+            fprintf(dumpFile, "(IF ");
             ast_print_help(ast->if_statement_node.if_condition, indent_num);
             if (ast->if_statement_node.statement) {
                 ast_print_help(ast->if_statement_node.statement, indent_num);
             }
             if (ast->if_statement_node.else_statement)
                 ast_print_help(ast->if_statement_node.else_statement, indent_num);
-            printf(")");
+            fprintf(dumpFile, ")");
             
             break;
             
@@ -491,9 +495,9 @@ void ast_print_help(node *ast, int indent_num) {
 //                exit(1);
 //            }
             indent(indent_num);
-            printf(" (ELSE ");
+            fprintf(dumpFile, " (ELSE ");
             ast_print_help(ast->else_statement_node.else_statement, indent_num);
-            printf(")");
+            fprintf(dumpFile, ")");
             break;
             
         case ASSIGNMENT_STATEMENT_NODE:
@@ -506,24 +510,24 @@ void ast_print_help(node *ast, int indent_num) {
                 exit(1);
             }
             indent(indent_num);
-            printf("(ASSIGN ");
+            fprintf(dumpFile, "(ASSIGN ");
             
             //TODO: determine the resulting type afterwards 
             print_type_id(ast->inferred_type.type_name, ast->inferred_type.is_vec, 
                     ast->inferred_type.vec_size, ast->inferred_type.is_const);
             ast_print_help(ast->assign_statement.var, indent_num);
             ast_print_help(ast->assign_statement.expr, indent_num);
-            printf(")");
+            fprintf(dumpFile, ")");
             break;
 
         case FUNCTION_NODE:
             indent(indent_num);
-            printf("(CALL ");
-            printf("%s ", ast->function.func_id);
+            fprintf(dumpFile, "(CALL ");
+            fprintf(dumpFile, "%s ", ast->function.func_id);
             if (ast->function.args != NULL) {
                 ast_print_help(ast->function.args, indent_num);
             }
-            printf(")");
+            fprintf(dumpFile, ")");
             break;
             
         case CONSTRUCTOR_NODE:
@@ -531,23 +535,23 @@ void ast_print_help(node *ast, int indent_num) {
                 perror("\n[error]: constructor missing type\n");
                 exit(1);
             }
-            printf("(CALL %s ", ast->constructor.type->type_node.type_name);
+            fprintf(dumpFile, "(CALL %s ", ast->constructor.type->type_node.type_name);
             ast_print_help(ast->constructor.args, indent_num);
-            printf(")");
+            fprintf(dumpFile, ")");
             break;
             
         case ARGS_NODE:
             if (ast->args_node.args) {
                 ast_print_help(ast->args_node.args, indent_num);
-                printf(", ");
+                fprintf(dumpFile, ", ");
             }
-            printf("(ARG ");
+            fprintf(dumpFile, "(ARG ");
             if (!ast->args_node.expr) {
                 perror("\n[error]: argument missing value\n");
                 exit(1);
             }
             ast_print_help(ast->args_node.expr, indent_num);
-            printf(")");
+            fprintf(dumpFile, ")");
             break;
             
         default:
@@ -558,56 +562,56 @@ void ast_print_help(node *ast, int indent_num) {
 }
 
 void indent(int num) {
-    printf("\n");
+    fprintf(dumpFile, "\n");
     for (int i = 0; i < num; i++) {
-        printf("  ");
+        fprintf(dumpFile, "  ");
     }
 }
 
 void print_op(int op) {
     switch (op) {
         case ADD:
-            printf("ADD ");
+            fprintf(dumpFile, "ADD ");
             break;
         case SUBTRACT:
-            printf("SUBTRACT ");
+            fprintf(dumpFile, "SUBTRACT ");
             break;
         case MULTIPLY:
-            printf("MULTIPLY ");
+            fprintf(dumpFile, "MULTIPLY ");
             break;
         case DIVIDE:
-            printf("DIVIDE ");
+            fprintf(dumpFile, "DIVIDE ");
             break;
         case ASSIGNMENT:
             //FIXME: error-prone
-            printf("ASSIGNMENT ");
+            fprintf(dumpFile, "ASSIGNMENT ");
             break;
         case POWER:
-            printf("POWER ");
+            fprintf(dumpFile, "POWER ");
             break;
         case AND:
-            printf("AND ");
+            fprintf(dumpFile, "AND ");
             break;
         case OR:
-            printf("OR ");
+            fprintf(dumpFile, "OR ");
             break;
         case EQUAL:
-            printf("EQUAL ");
+            fprintf(dumpFile, "EQUAL ");
             break;
         case NOTEQUAL:
-            printf("NOTEQUAL ");
+            fprintf(dumpFile, "NOTEQUAL ");
             break;
         case GT:
-            printf("GT ");
+            fprintf(dumpFile, "GT ");
             break;
         case GE:
-            printf("GE ");
+            fprintf(dumpFile, "GE ");
             break;
         case LT:
-            printf("LT ");
+            fprintf(dumpFile, "LT ");
             break;
         case LE:
-            printf("LE ");
+            fprintf(dumpFile, "LE ");
             break;
         default: break;
     }
@@ -616,10 +620,10 @@ void print_op(int op) {
 void print_op_unary (int op) {
     switch (op) {
         case SUBTRACT:
-            printf("NEG ");
+            fprintf(dumpFile, "NEG ");
             break;
         case NOTEQUAL:
-            printf("NOT ");
+            fprintf(dumpFile, "NOT ");
             break;
         default: break;
     }
@@ -636,28 +640,29 @@ void debugP(int verbose_flag, const char* str, ...) {
 
 void print_type_id(type_id type_name, int is_vec, int vec_index, int is_const) {
     if (is_const) {
-        printf("const ");
+        fprintf(dumpFile, "const ");
     }
     switch (type_name) {
         case INT:
             if (is_vec) {
-                printf("ivec%d ", vec_index);
+                fprintf(dumpFile, "ivec%d ", vec_index);
             } else {
-                printf("int ");
+                fprintf(dumpFile, "int ");
             }
             break;
         case FLOAT:
             if (is_vec) {
-                printf("vec%d ", vec_index);
+                fprintf(dumpFile, "vec%d ", vec_index);
             } else {
-                printf("float ");
+                fprintf(dumpFile, "float ");
             }
             break;
         case BOOL:
             if (is_vec) {
-                printf("bvec%d ", vec_index);
+                fprintf(dumpFile, "bvec%d ", vec_index);
+                fprintf(dumpFile, "bvec%d ", vec_index);
             } else {
-                printf("bool ");
+                fprintf(dumpFile, "bool ");
             }
             break;
 //        case VEC: 
@@ -665,7 +670,7 @@ void print_type_id(type_id type_name, int is_vec, int vec_index, int is_const) {
 //            exit(1);
 //            break;
         default: 
-            printf("ANY ");
+            fprintf(dumpFile, "ANY ");
             break;
     }
 }
