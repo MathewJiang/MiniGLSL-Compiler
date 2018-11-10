@@ -454,7 +454,7 @@ void ast_print_help(node *ast, int indent_num) {
 void indent(int num) {
     printf("\n");
     for (int i = 0; i < num; i++) {
-        printf("\t");
+        printf("  ");
     }
 }
 
@@ -564,19 +564,31 @@ void print_type_id(type_id type_name, int is_vec, int vec_index, int is_const) {
     }
 }
 
-//char* get_type_id_name(type_id type_name) {
-//    switch (type_name) {
-//        case INT:
-//            return "int";
-//        case FLOAT:
-//            return "float";
-//        case BOOL:
-//            return "bool";
-////        case VEC: 
-////            printf("[error]vec case unimplemented\n");
-////            exit(1);
-////            break;
-//        default: 
-//            return "ANY";
-//    }
-//}
+char* get_type_id_name(type_id type_name) {
+    char* result_buf = (char*)malloc(sizeof(char) * 6);
+    switch (type_name) {
+        case INT:
+            strcpy(result_buf, "int");
+            break;
+        case FLOAT:
+            strcpy(result_buf, "float");
+            break;
+        case BOOL:
+            strcpy(result_buf, "bool");
+            break;
+        case ANY:
+            strcpy(result_buf, "ANY");
+            break;
+        default: 
+            strcpy(result_buf, "[UNEXPECTED]");
+            break;
+    }
+    return result_buf;
+}
+
+func_id func_name_to_id(char* func_name) {
+    if (!strcmp(func_name, "lit")) return LIT;
+    if (!strcmp(func_name, "rsq")) return RSQ;
+    if (!strcmp(func_name, "dp3")) return DP3;
+    return UNKNOWN_FUNC;
+}

@@ -53,6 +53,7 @@ typedef enum {
     INT     = 100,
     FLOAT   = 101,
     BOOL    = 102,
+    NUMBER  = 103,
 //    BVEC2   = 103,
 //    BVEC3   = 104,
 //    BVEC4   = 105,
@@ -64,6 +65,13 @@ typedef enum {
 //    VEC4    = 111,
     ANY     = 200
 }type_id;
+
+typedef enum {
+    RSQ          = 50000000,
+    DP3          = 60000000,
+    LIT          = 70000000,
+    UNKNOWN_FUNC = 80000000
+}func_id;
 
 struct node_type {
     type_id type_name = ANY;
@@ -181,9 +189,10 @@ void ast_print(node * ast);
 void ast_print_help(node *ast, int indent_num);
 void indent(int num);
 void print_op(int op);
-//char* get_type_id_name(type_id type_name);
 void print_op_unary (int op);
 void print_type_id(type_id type_name, int is_vec, int vec_index, int is_const);
+char* get_type_id_name(type_id type_name);
+func_id func_name_to_id(char* func_name);
 int semantic_check(node * ast);
 
 #endif /* AST_H_ */

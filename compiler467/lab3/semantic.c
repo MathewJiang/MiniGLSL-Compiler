@@ -83,7 +83,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             // Check if the variable has been declared before reaching here.
             sentry* var_entry = find_var_reference_by_id(ast->var_node.id, curr_scope);
             if (!var_entry) {
-                printf("[error]Scope checking: variable %s has not declared before use\n", ast->var_node.id);
+                printf("[error]Scope checking: variable %s was not declared before use\n", ast->var_node.id);
                 ast->inferred_type.type_name = ANY;
                 errorOccurred = true;
             } else if (!var_entry->valid || var_entry->stype == UNKNOWN_TYPE) {
@@ -463,12 +463,16 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
 
         case FUNCTION_NODE:
             ast_semantic_check_help(ast->function.args, curr_scope);
+            errorOccurred |= semantic_check_function_call(ast);
+            printf("[debug]Function call to %s's inferred type: type_name=%s, is_const=%d, is_vec=%d, vec_size=%d\n\n",
+                    ast->function.func_id, get_type_id_name(ast->inferred_type.type_name),
+                    ast->inferred_type.is_const, ast->inferred_type.is_vec, ast->inferred_type.vec_size);
             break;
 
         case CONSTRUCTOR_NODE:
             ast_semantic_check_help(ast->constructor.args, curr_scope);
             ast_semantic_check_help(ast->constructor.type, curr_scope);
-            semantic_check_constructor_call(ast);
+            errorOccurred |= semantic_check_constructor_call(ast);
             break;
         
         case ARGS_NODE:
@@ -504,10 +508,11 @@ bool scope_check_var_declaration_valid(node* ast, snode* curr_scope) {
     return find_sentry_in_snode_by_id(ast->declaration.id, curr_scope) ? 0 : 1; // NOT valid if found!!!
 }
 
+// return 1 if error occurs, 0 if succeed.
 bool semantic_check_constructor_call(node* cstr_stmt) {
     if (cstr_stmt == NULL) {
         printf("[Error]Semantic-check: Constructor node is NULL\n");
-        return 0;
+        return 1;
     }
     bool err = false;
     
@@ -519,7 +524,12 @@ bool semantic_check_constructor_call(node* cstr_stmt) {
     node* curr_args = cstr_stmt->constructor.args;
     if (!curr_args) {
         printf("[Error]Semantic-check: Constructor has no args.\n");
-        return 0;
+        // Record inferred return type to constructor node.
+        cstr_stmt->inferred_type.type_name = ANY;
+        cstr_stmt->inferred_type.is_vec = is_vec;
+        cstr_stmt->inferred_type.vec_size = vec_size;
+        cstr_stmt->inferred_type.is_const = is_vec ? 0 : 1;
+        return 1;
     }
 
     while(curr_args) {
@@ -532,7 +542,8 @@ bool semantic_check_constructor_call(node* cstr_stmt) {
             err = true;
         }
         if (curr_arg_type.type_name != cstr_type_id) {
-            printf("[Error]Semantic-check: Constructor argument %d has type %d, expecting %d.\n", args_count, curr_arg_type.type_name, cstr_type_id);
+            printf("[Error]Semantic-check: Constructor argument %d has type %s, expecting %s.\n", args_count,
+                    get_type_id_name(curr_arg_type.type_name), get_type_id_name(cstr_type_id));
             err = true;
         }
         curr_args = curr_args->args_node.args;
@@ -545,5 +556,159 @@ bool semantic_check_constructor_call(node* cstr_stmt) {
         err = true;
     }
     
-    return !err;
+    // Record inferred return type to constructor node.
+    cstr_stmt->inferred_type.type_name = err ? ANY : cstr_type_id;
+    cstr_stmt->inferred_type.is_vec = is_vec;
+    cstr_stmt->inferred_type.vec_size = vec_size;
+    cstr_stmt->inferred_type.is_const = is_vec ? 0 : 1;
+    return err;
+}
+
+// return 1 if error occurs, 0 if succeed.
+bool semantic_check_function_call(node* func_call) {
+    if (func_call == NULL) {
+        printf("[Error]Semantic-check: Function node is NULL\n");
+        return 1;
+    }
+    bool err = false;
+    
+    int expected_args_count = 0;
+    type_id expected_arg_type = ANY;
+    int expected_arg_is_vec = false;
+    int expected_arg_vec_size_1 = 0;
+    int expected_arg_vec_size_2 = 0;
+    type_id return_type = ANY;
+    int return_val_is_vec = 0;
+    int return_val_is_const = 0;
+    int return_val_vec_size = 0;
+    
+    switch (func_name_to_id(func_call->function.func_id)) {
+        case LIT:
+            expected_args_count = 1;
+            expected_arg_type = FLOAT;
+            expected_arg_is_vec = true;
+            expected_arg_vec_size_1 = 4;
+            expected_arg_vec_size_2 = 4;
+            return_type = FLOAT;
+            return_val_is_vec = true;
+            return_val_vec_size = 4;
+            return_val_is_const = 0;
+            break;
+        case RSQ:
+            expected_args_count = 1;
+            expected_arg_type = NUMBER;
+            expected_arg_is_vec = false;
+            expected_arg_vec_size_1 = 0;
+            expected_arg_vec_size_2 = 0;
+            return_type = FLOAT;
+            return_val_is_vec = false;
+            return_val_vec_size = 0;
+            return_val_is_const = 1;
+            break;
+        case DP3:
+            expected_args_count = 2;
+            expected_arg_type = NUMBER;
+            expected_arg_is_vec = true;
+            expected_arg_vec_size_1 = 3;
+            expected_arg_vec_size_2 = 4;
+            return_type = FLOAT;
+            return_val_is_vec = false;
+            return_val_vec_size = 0;
+            return_val_is_const = 1;
+            break;
+        default:
+        {
+            printf("[error]Semantic-check: Unsupported func call to %s\n", func_call->function.func_id);
+            // Record inferred type into func_call node.
+            func_call->inferred_type.type_name = ANY;
+            func_call->inferred_type.is_vec = return_val_is_vec;
+            func_call->inferred_type.vec_size = return_val_vec_size;
+            func_call->inferred_type.is_const = return_val_is_const;
+            return 1;
+        }
+            break;
+    }
+    
+    int args_count = 0;
+    int first_arg_vec_size = -1;
+    type_id first_arg_vec_type = ANY;
+    node* curr_args = func_call->function.args;
+    if (!curr_args) {
+        printf("[Error]Semantic-check: Function has no args.\n");
+        // Record inferred return type to Func node.
+        func_call->inferred_type.type_name = ANY;
+        func_call->inferred_type.is_vec = return_val_is_vec;
+        func_call->inferred_type.vec_size = return_val_vec_size;
+        func_call->inferred_type.is_const = return_val_is_const;
+        return 1;
+    }
+
+    while(curr_args) {
+        args_count++;
+        node* curr_arg_expr = curr_args->args_node.expr;
+        // Check if each arg has same type as constructor, then check arg count matches
+        struct node_type curr_arg_type = curr_arg_expr->inferred_type;
+        if (curr_arg_type.is_vec != expected_arg_is_vec) {
+            // Expecting a vector/scalar argument but passed in arg is not.
+            printf("[Error]Semantic-check: Function call to %s expects %svectors, but argument %d is %sa vector.\n", func_call->function.func_id,
+                    expected_arg_is_vec ? "" : "no ", args_count, curr_arg_type.is_vec ? "" : "not ");
+            err = true;
+        }
+        if (curr_arg_type.is_vec && expected_arg_is_vec // This is printed only if expecting a vector(but passed in wrong size).
+                && curr_arg_type.vec_size != expected_arg_vec_size_1
+                && curr_arg_type.vec_size != expected_arg_vec_size_2) {
+            printf("[Error]Semantic-check: Function call to %s has argument vector %d with size %d, expecting size %d",
+                    func_call->function.func_id, args_count, curr_arg_type.vec_size, expected_arg_vec_size_1);
+            if (expected_arg_vec_size_1 != expected_arg_vec_size_2) {
+                printf(" or %d", expected_arg_vec_size_2);
+            }
+            printf(".\n");
+            err = true;
+        }
+
+        if (curr_arg_type.type_name != expected_arg_type &&
+                (expected_arg_type != NUMBER || 
+                        (expected_arg_type == NUMBER
+                           && curr_arg_type.type_name != INT
+                           && curr_arg_type.type_name != FLOAT))) {
+            printf("[Error]Semantic-check: Function call to %s has argument %d as a %s%s, expecting %s%s.\n",
+                    func_call->function.func_id, args_count, get_type_id_name(curr_arg_type.type_name),
+                    curr_arg_type.is_vec ? " vector" : "",
+                    expected_arg_type == NUMBER ? "int or float" : get_type_id_name(expected_arg_type),
+                    expected_arg_is_vec ? (expected_args_count > 1 ? " vectors" : " vector") : "");
+            err = true;
+        }
+        
+        // Use first arg's vec_size and type to check second arg (IF VALID).
+        if (first_arg_vec_size == -1 && curr_arg_type.is_vec && !err) {
+            first_arg_vec_size = curr_arg_type.vec_size;
+            first_arg_vec_type = curr_arg_type.type_name;
+        } 
+        if (first_arg_vec_size != -1 && first_arg_vec_type != ANY && curr_arg_type.is_vec && !err) {
+            if (curr_arg_type.vec_size != first_arg_vec_size || curr_arg_type.type_name != first_arg_vec_type) {
+                printf("[Error]Semantic-check: Function call seems valid so far, but argument %d is a vector with inconsistent",
+                    args_count);
+                if (curr_arg_type.vec_size != first_arg_vec_size) printf(" size");
+                if (curr_arg_type.vec_size != first_arg_vec_size && curr_arg_type.type_name != first_arg_vec_type) printf(" and");
+                if (curr_arg_type.type_name != first_arg_vec_type) printf(" type");
+            
+                printf(" with previous vector arguments.\n");
+                err = true;
+            }
+        }
+        
+        curr_args = curr_args->args_node.args;
+    }
+    if (expected_args_count != args_count) {
+        printf("[Error]Semantic-check: Function call to %s expects exactly %d arguments, actually passing in %d.\n",
+                func_call->function.func_id, expected_args_count, args_count);
+        err = true;
+    }
+    
+    // Record inferred return type to constructor node.
+    func_call->inferred_type.type_name = err ? ANY : return_type;
+    func_call->inferred_type.is_vec = return_val_is_vec;
+    func_call->inferred_type.vec_size = return_val_vec_size;
+    func_call->inferred_type.is_const = return_val_is_const;
+    return err;
 }

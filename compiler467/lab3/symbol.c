@@ -5,6 +5,8 @@
 #include "symbol.h"
 #include "ast.h"
 
+#define VB_SNODE_PRINT 0
+
 // Sentry functions
 sentry* sentry_alloc() {
     sentry* new_sentry = (sentry*)malloc(sizeof(sentry));
@@ -151,7 +153,7 @@ int snode_destroy(snode* snode) {
 }
 
 void snode_print(snode* snode) {
-    if (!snode) return;
+    if (!snode || !VB_SNODE_PRINT) return;
     sentry* printer = snode->sentry_head;
     printf("********Printing scope table with %d entries********\n", snode->sentry_count);
     while(printer) {
