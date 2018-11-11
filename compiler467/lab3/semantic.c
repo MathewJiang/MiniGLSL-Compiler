@@ -83,20 +83,16 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 if (ast->declaration.expr->inferred_type.predef_info) {
                     expr_readable = ast->declaration.expr->inferred_type.predef_info->is_readable;
                 }
-                if (!expr_readable) {
+                
+                //TODO: add for the uniform type as well
+                int var_is_const = ast->declaration.is_const;
+                int expr_is_const = ast->declaration.expr->inferred_type.is_const;
+                if (var_is_const && !expr_is_const) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand: [DECLARATION]: expr write-only\n", ast->line_num);
-                } else {
-                    //TODO: add for the uniform type as well
-                    int var_is_const = ast->declaration.is_const;
-                    int expr_is_const = ast->declaration.expr->inferred_type.is_const;
-                    if (var_is_const && !expr_is_const) {
-                        errorOccurred = true;
-                        ast->inferred_type.type_name = ANY;
-                        fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand: [DECLARATION]: assign const variable non_const values\n", ast->line_num);
-                    }
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand: [DECLARATION]: assign const variable non_const values\n", ast->line_num);
                 }
+                
             }
         }
             break;
@@ -206,10 +202,6 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
                     fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [UNARY]!: operand must be BOOL type\n", ast->line_num);
-                }  else if (!right_readable) {
-                    errorOccurred = true;
-                    ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [UNARY]!: operand write-only\n", ast->line_num);
                 } else {
                     if (ast->unary_expr.right->inferred_type.is_vec) {
                         ast->inferred_type.type_name = right_type;
@@ -228,10 +220,6 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
                     fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [UNARY]-: operand must be arithmetic types\n", ast->line_num);
-                } else if (!right_readable) {
-                    errorOccurred = true;
-                    ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [UNARY]!: operand write-only\n", ast->line_num);
                 } else {
                     if (ast->unary_expr.right->inferred_type.is_vec) {
                         ast->inferred_type.type_name = right_type;
@@ -277,11 +265,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             if (ast->binary_expr.op == AND     ||
                 ast->binary_expr.op == OR) {
                 //ss, vv
-                if (!left_readable || !right_readable) {
-                    errorOccurred = true;
-                    ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]&&, ||: 1+ operands are write-only\n", ast->line_num);
-                } else if (left_type != BOOL || right_type != BOOL) {
+                if (left_type != BOOL || right_type != BOOL) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
                     fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]&&, ||: both operand must be BOOL\n", ast->line_num);
@@ -318,11 +302,8 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 ast->binary_expr.op == LT           ||    
                 ast->binary_expr.op == LE) {
                 //ss
-                if (!left_readable || !right_readable) {
-                    errorOccurred = true;
-                    ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]<, <=, >, >=: 1+ operands are write-only\n", ast->line_num);
-                } else if ((left_type != right_type) 
+
+                if ((left_type != right_type) 
                         || (left_type == ANY || right_type == ANY)) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
@@ -347,11 +328,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             else if (ast->binary_expr.op == EQUAL   ||
                 ast->binary_expr.op == NOTEQUAL) {
                 //ss, vv
-                if (!left_readable || right_readable) {
-                    errorOccurred = true;
-                    ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]==, !=: 1+ operands are write-only\n", ast->line_num);
-                } else if ((left_type != right_type) 
+                if ((left_type != right_type) 
                         || (left_type == ANY || right_type == ANY)) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
@@ -388,11 +365,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             else if (ast->binary_expr.op == ADD   ||
                     ast->binary_expr.op == SUBTRACT) {
                 //ss, vv
-                if (!left_readable || !right_readable) {
-                    errorOccurred = true;
-                    ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]+, -: 1+ operands are write-only\n", ast->line_num);
-                } else if ((left_type == BOOL || right_type == BOOL) 
+                if ((left_type == BOOL || right_type == BOOL)
                         || (left_type == ANY || right_type == ANY)) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
@@ -430,11 +403,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             
             else if (ast->binary_expr.op == MULTIPLY) {
                 //ss, vv, sv, vs
-                if (!left_readable || !right_readable) {
-                    errorOccurred = true;
-                    ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]*: 1+ operands are write-only\n", ast->line_num);
-                } else if (left_type == BOOL || right_type == BOOL) {
+                if (left_type == BOOL || right_type == BOOL) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
                     fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]*: both operand must not be BOOL\n", ast->line_num);
@@ -485,11 +454,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             else if (ast->binary_expr.op == DIVIDE    ||
                     ast->binary_expr.op == POWER) {
                 //ss
-                if (!left_readable || !right_readable) {
-                    errorOccurred = true;
-                    ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]/, ^: 1+ operands are write-only\n", ast->line_num);
-                } else if (left_type == BOOL || right_type == BOOL) {
+                if (left_type == BOOL || right_type == BOOL) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
                     fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [BINARY]/, ^: both operand must not be BOOL\n", ast->line_num);
@@ -515,7 +480,13 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             ast_semantic_check_help(ast->if_statement_node.if_condition, curr_scope);
             ast_semantic_check_help(ast->if_statement_node.statement, curr_scope);
             ast_semantic_check_help(ast->if_statement_node.else_statement, curr_scope);
-            if (ast->if_statement_node.if_condition->inferred_type.type_name != BOOL) {
+            if (ast->if_statement_node.statement->inferred_type.predef_info) {
+                if (ast->if_statement_node.statement->inferred_type.predef_info->is_writable) {
+                    errorOccurred = true;
+                    ast->inferred_type.type_name = ANY;
+                    fprintf(errorFile, "[Error]Semantic-check: Bad expr type: [IF]: Result type of pre-defined variables cannot be assign inside if\n");
+                }
+            } else if (ast->if_statement_node.if_condition->inferred_type.type_name != BOOL) {
                 errorOccurred = true;
                 ast->inferred_type.type_name = ANY;
                 fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad expr type: [IF]: if expr must be evaluated to BOOL type\n", ast->line_num);
@@ -532,6 +503,13 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             
         case ELSE_STATEMENT_NODE:
             ast_semantic_check_help(ast->else_statement_node.else_statement, curr_scope);
+            if (ast->else_statement_node.else_statement->inferred_type.predef_info) {
+                if (ast->else_statement_node.else_statement->inferred_type.predef_info->is_writable) {
+                    errorOccurred = true;
+                    ast->inferred_type.type_name = ANY;
+                    fprintf(errorFile, "[Error]Semantic-check: Bad expr type: [ELSE]: Result type of pre-defined variables cannot be assign inside else\n");
+                }
+            }
             break;
             
         case ASSIGNMENT_STATEMENT_NODE:
@@ -560,10 +538,6 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 errorOccurred = true;
                 ast->inferred_type.type_name = ANY;
                 fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [Assignment]: var read-only\n", ast->line_num);
-            } else if (!expr_is_readable) {
-                errorOccurred = true;
-                ast->inferred_type.type_name = ANY;
-                fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [Assignment]: expr write-only\n", ast->line_num);
             } else if (var_type != expr_type) {
                 errorOccurred = true;
                 ast->inferred_type.type_name = ANY;
@@ -586,6 +560,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                     ast->inferred_type.is_vec = var_is_vec;
                     ast->inferred_type.vec_size = var_vec_size;
                     ast->inferred_type.is_const = var_is_const;
+                    ast->inferred_type.predef_info = ast->assign_statement.var->inferred_type.predef_info;
                 }
             }
         }
