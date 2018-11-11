@@ -8,11 +8,10 @@
 snode* root_scope = NULL;
 
 void ast_semantic_check(node* ast) {
-    ast_semantic_check_help(ast, root_scope);
+    ast_semantic_check_help(ast, root_scope, false);
 }
 
-
-void ast_semantic_check_help(node* ast, snode* curr_scope) {
+void ast_semantic_check_help(node* ast, snode* curr_scope, bool is_checking_if) {
     if (ast == NULL) {
         return;
     }
@@ -29,8 +28,8 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
                 fprintf(errorFile, "Line %d: [Error]Scope checking: root scope already exists;\n", ast->line_num);
             }
             // Type checking and proceed to other node checkings...
-            ast_semantic_check_help(ast->scope.declarations, curr_scope);
-            ast_semantic_check_help(ast->scope.statements, curr_scope);
+            ast_semantic_check_help(ast->scope.declarations, curr_scope, is_checking_if);
+            ast_semantic_check_help(ast->scope.statements, curr_scope, is_checking_if);
             // Destroy the outermost scope.
             snode_destroy(root_scope);
             root_scope = NULL;
@@ -40,15 +39,15 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             // Scope checking, push new scope onto symbol table, pop before return.
             curr_scope = snode_alloc(curr_scope);
             // Type checking and proceed to other node checkings...
-            ast_semantic_check_help(ast->nested_scope.scope->scope.declarations, curr_scope);
-            ast_semantic_check_help(ast->nested_scope.scope->scope.statements, curr_scope);
+            ast_semantic_check_help(ast->nested_scope.scope->scope.declarations, curr_scope, is_checking_if);
+            ast_semantic_check_help(ast->nested_scope.scope->scope.statements, curr_scope, is_checking_if);
             // Destroy current scope.
             snode_destroy(curr_scope);
             break;
             
         case DECLARATIONS_NODE:
-            ast_semantic_check_help(ast->declarations.declarations, curr_scope);
-            ast_semantic_check_help(ast->declarations.declaration, curr_scope);
+            ast_semantic_check_help(ast->declarations.declarations, curr_scope, is_checking_if);
+            ast_semantic_check_help(ast->declarations.declaration, curr_scope, is_checking_if);
             break;
 
         case DECLARATION_NODE:
@@ -77,12 +76,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             snode_print(curr_scope);
             
             if (ast->declaration.expr) {
-                ast_semantic_check_help(ast->declaration.expr, curr_scope);
-                
-                int expr_readable = 1;
-                if (ast->declaration.expr->inferred_type.predef_info) {
-                    expr_readable = ast->declaration.expr->inferred_type.predef_info->is_readable;
-                }
+                ast_semantic_check_help(ast->declaration.expr, curr_scope, is_checking_if);
                 
                 //TODO: add for the uniform type as well
                 int var_is_const = ast->declaration.is_const;
@@ -98,8 +92,8 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             break;
             
         case STATEMENTS_NODE:
-            ast_semantic_check_help(ast->statements.statements, curr_scope);
-            ast_semantic_check_help(ast->statements.statement, curr_scope);
+            ast_semantic_check_help(ast->statements.statements, curr_scope, is_checking_if);
+            ast_semantic_check_help(ast->statements.statement, curr_scope, is_checking_if);
             break;
         
         case TYPE_NODE:
@@ -189,12 +183,8 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
 
         case UNARY_EXPRESSION_NODE:
         {
-            ast_semantic_check_help(ast->unary_expr.right, curr_scope);
+            ast_semantic_check_help(ast->unary_expr.right, curr_scope, is_checking_if);
             type_id right_type = ast->unary_expr.right->inferred_type.type_name;
-            int right_readable = 1 ;
-            if (ast->unary_expr.right->inferred_type.predef_info) {
-                right_readable = ast->unary_expr.right->inferred_type.predef_info->is_readable;
-            }
             
             if (ast->unary_expr.op == NOTEQUAL) {
                 //s, v 
@@ -243,24 +233,18 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
         {
             //TODO: have not dealt with all the vector case
             //Only scalar case for now
-            ast_semantic_check_help(ast->binary_expr.left, curr_scope);
+            ast_semantic_check_help(ast->binary_expr.left, curr_scope, is_checking_if);
             type_id left_type = ast->binary_expr.left->inferred_type.type_name;
             int left_is_vec = ast->binary_expr.left->inferred_type.is_vec;
             int left_vec_size = ast->binary_expr.left->inferred_type.vec_size;
             int left_is_const = ast->binary_expr.left->inferred_type.is_const;
-            int left_readable = 1;
-            if (ast->binary_expr.left->inferred_type.predef_info) {
-                left_readable = ast->binary_expr.left->inferred_type.predef_info->is_readable;
-            }
-            ast_semantic_check_help(ast->binary_expr.right, curr_scope);
+            
+            ast_semantic_check_help(ast->binary_expr.right, curr_scope, is_checking_if);
             type_id right_type = ast->binary_expr.right->inferred_type.type_name;
             int right_is_vec = ast->binary_expr.right->inferred_type.is_vec;
             int right_vec_size = ast->binary_expr.right->inferred_type.vec_size;
             int right_is_const = ast->binary_expr.right->inferred_type.is_const;
-            int right_readable = 1;
-            if (ast->binary_expr.right->inferred_type.predef_info) {
-                right_readable = ast->binary_expr.right->inferred_type.predef_info->is_readable;
-            }
+            
             
             if (ast->binary_expr.op == AND     ||
                 ast->binary_expr.op == OR) {
@@ -477,9 +461,9 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             break;
             
         case IF_STATEMENT_NODE:
-            ast_semantic_check_help(ast->if_statement_node.if_condition, curr_scope);
-            ast_semantic_check_help(ast->if_statement_node.statement, curr_scope);
-            ast_semantic_check_help(ast->if_statement_node.else_statement, curr_scope);
+            ast_semantic_check_help(ast->if_statement_node.if_condition, curr_scope, is_checking_if);
+            ast_semantic_check_help(ast->if_statement_node.statement, curr_scope, true);
+            ast_semantic_check_help(ast->if_statement_node.else_statement, curr_scope, true);
             if (ast->if_statement_node.statement->inferred_type.predef_info) {
                 if (ast->if_statement_node.statement->inferred_type.predef_info->is_writable) {
                     errorOccurred = true;
@@ -502,7 +486,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             break;
             
         case ELSE_STATEMENT_NODE:
-            ast_semantic_check_help(ast->else_statement_node.else_statement, curr_scope);
+            ast_semantic_check_help(ast->else_statement_node.else_statement, curr_scope, true);
             if (ast->else_statement_node.else_statement->inferred_type.predef_info) {
                 if (ast->else_statement_node.else_statement->inferred_type.predef_info->is_writable) {
                     errorOccurred = true;
@@ -514,31 +498,36 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             
         case ASSIGNMENT_STATEMENT_NODE:
         {
-            ast_semantic_check_help(ast->assign_statement.var, curr_scope);
-            ast_semantic_check_help(ast->assign_statement.expr, curr_scope);
+            ast_semantic_check_help(ast->assign_statement.var, curr_scope, is_checking_if);
+            ast_semantic_check_help(ast->assign_statement.expr, curr_scope, is_checking_if);
             
             type_id var_type = ast->assign_statement.var->inferred_type.type_name;
             int var_is_vec = ast->assign_statement.var->inferred_type.is_vec;
             int var_vec_size = ast->assign_statement.var->inferred_type.vec_size;
             int var_is_const = ast->assign_statement.var->inferred_type.is_const;
             int var_is_writable = 1;
+            int is_var_predef = 0;
             if (ast->assign_statement.var->inferred_type.predef_info) {
                 var_is_writable = ast->assign_statement.var->inferred_type.predef_info->is_writable;
+                is_var_predef = 1;
             }
             type_id expr_type = ast->assign_statement.expr->inferred_type.type_name;
             int expr_is_vec = ast->assign_statement.expr->inferred_type.is_vec;
             int expr_vec_size = ast->assign_statement.expr->inferred_type.vec_size;
             int expr_is_const = ast->assign_statement.expr->inferred_type.is_const;
-            int expr_is_readable = 1;
-            if (ast->assign_statement.expr->inferred_type.predef_info) {
-                expr_is_readable = ast->assign_statement.expr->inferred_type.predef_info->is_readable;
-            }
             
+            if (var_is_writable && is_var_predef && is_checking_if) {
+                    errorOccurred = true;
+                    ast->inferred_type.type_name = ANY;
+                    fprintf(errorFile, "[Error]Semantic-check: Bad expr type: [IF/ELSE]: Result type of pre-defined variables cannot be assign inside if/else\n");
+            }
             if (!var_is_writable) {
                 errorOccurred = true;
                 ast->inferred_type.type_name = ANY;
-                fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [Assignment]: var read-only\n", ast->line_num);
-            } else if (var_type != expr_type) {
+                fprintf(errorFile, "[Error]Semantic-check: Bad expr type: [ASSIGNMENT]var read-only\n");
+            }
+            
+            if (var_type != expr_type) {
                 errorOccurred = true;
                 ast->inferred_type.type_name = ANY;
                 fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad operand type: [Assignment]: operands with different type\n", ast->line_num);
@@ -567,7 +556,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             break;
 
         case FUNCTION_NODE:
-            ast_semantic_check_help(ast->function.args, curr_scope);
+            ast_semantic_check_help(ast->function.args, curr_scope, is_checking_if);
             errorOccurred |= semantic_check_function_call(ast);
 //            printf("[debug]Function call to %s's inferred type: type_name=%s, is_const=%d, is_vec=%d, vec_size=%d\n\n",
 //                    ast->function.func_id, get_type_id_name(ast->inferred_type.type_name),
@@ -575,14 +564,14 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
             break;
 
         case CONSTRUCTOR_NODE:
-            ast_semantic_check_help(ast->constructor.args, curr_scope);
-            ast_semantic_check_help(ast->constructor.type, curr_scope);
+            ast_semantic_check_help(ast->constructor.args, curr_scope, is_checking_if);
+            ast_semantic_check_help(ast->constructor.type, curr_scope, is_checking_if);
             errorOccurred |= semantic_check_constructor_call(ast);
             break;
         
         case ARGS_NODE:
-            ast_semantic_check_help(ast->args_node.args, curr_scope);
-            ast_semantic_check_help(ast->args_node.expr, curr_scope);
+            ast_semantic_check_help(ast->args_node.args, curr_scope, is_checking_if);
+            ast_semantic_check_help(ast->args_node.expr, curr_scope, is_checking_if);
             break;
     
         default:
