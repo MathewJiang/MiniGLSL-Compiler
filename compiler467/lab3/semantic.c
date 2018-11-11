@@ -468,7 +468,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope, bool is_checking_if) 
                 if (ast->if_statement_node.statement->inferred_type.predef_info->is_writable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad expr type: [IF]: Result type of pre-defined variables cannot be assign inside if\n");
+//                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad expr type: [IF]: Result type of pre-defined variables cannot be assign inside if\n", ast->line_num);
                 }
             } else if (ast->if_statement_node.if_condition->inferred_type.type_name != BOOL) {
                 errorOccurred = true;
@@ -491,7 +491,7 @@ void ast_semantic_check_help(node* ast, snode* curr_scope, bool is_checking_if) 
                 if (ast->else_statement_node.else_statement->inferred_type.predef_info->is_writable) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad expr type: [ELSE]: Result type of pre-defined variables cannot be assign inside else\n");
+//                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad expr type: [ELSE]: Result type of pre-defined variables cannot be assign inside else\n", ast->line_num);
                 }
             }
             break;
@@ -519,12 +519,12 @@ void ast_semantic_check_help(node* ast, snode* curr_scope, bool is_checking_if) 
             if (var_is_writable && is_var_predef && is_checking_if) {
                     errorOccurred = true;
                     ast->inferred_type.type_name = ANY;
-                    fprintf(errorFile, "[Error]Semantic-check: Bad expr type: [IF/ELSE]: Result type of pre-defined variables cannot be assign inside if/else\n");
+                    fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad expr type: [IF/ELSE]: Result type of pre-defined variables cannot be assign inside if/else\n", ast->line_num);
             }
             if (!var_is_writable) {
                 errorOccurred = true;
                 ast->inferred_type.type_name = ANY;
-                fprintf(errorFile, "[Error]Semantic-check: Bad expr type: [ASSIGNMENT]var read-only\n");
+                fprintf(errorFile, "Line %d: [Error]Semantic-check: Bad expr type: [ASSIGNMENT]var read-only\n", ast->line_num);
             }
             
             if (var_type != expr_type) {
