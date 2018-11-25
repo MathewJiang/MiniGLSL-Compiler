@@ -1,0 +1,51 @@
+diff --git a/compiler467/lab3/semantic.c b/compiler467/lab3/semantic.c
+index 21b3e7f..60166b0 100644
+--- a/compiler467/lab3/semantic.c
++++ b/compiler467/lab3/semantic.c
+@@ -66,6 +66,15 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
+             
+             if (ast->declaration.expr) {
+                 ast_semantic_check_help(ast->declaration.expr, curr_scope);
++                
++                //TODO: add for the uniform type as well
++                int var_is_const = ast->declaration.is_const;
++                int expr_is_const = ast->declaration.expr->inferred_type.is_const;
++                if (var_is_const && !expr_is_const) {
++                    errorOccurred = true;
++                    ast->inferred_type.type_name = ANY;
++                    printf("Bad operand: [DECLARATION]: assign const variable non_const values\n");
++                }
+             }
+         }
+             break;
+@@ -91,11 +100,25 @@ void ast_semantic_check_help(node* ast, snode* curr_scope) {
+                 ast->inferred_type.type_name = ANY;
+                 errorOccurred = true;
+             } else {
+-                // Save inferred data into ast node struct.
+-                ast->inferred_type.type_name = stype_to_type_id(var_entry->stype);
+-                ast->inferred_type.is_const = var_entry->is_const;
+-                ast->inferred_type.is_vec = var_entry->is_vec;
+-                ast->inferred_type.vec_size = var_entry->vec_size;
++                if (ast->var_node.vec_idx != -1) {
++                    //e.g.f[0]
++                    if (ast->var_node.vec_idx < 0 || ast->var_node.vec_idx >= var_entry->vec_size) {
++                        printf("Bad operand: [VAR]: index out of bound\n");
++                        ast->inferred_type.type_name = ANY;
++                        errorOccurred = true;
++                    } else {
++                        ast->inferred_type.type_name = stype_to_type_id(var_entry->stype);
++                        ast->inferred_type.is_const = var_entry->is_const;
++                        ast->inferred_type.is_vec = 0;
++                        ast->inferred_type.vec_size = 0;
++                    }
++                } else {
++                    // Save inferred data into ast node struct.
++                    ast->inferred_type.type_name = stype_to_type_id(var_entry->stype);
++                    ast->inferred_type.is_const = var_entry->is_const;
++                    ast->inferred_type.is_vec = var_entry->is_vec;
++                    ast->inferred_type.vec_size = var_entry->vec_size;
++                }
+             }
+         }
+             break;
