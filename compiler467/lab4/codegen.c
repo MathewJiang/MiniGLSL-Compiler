@@ -123,6 +123,17 @@ void genCode(node *ast) {
             break;
             
         case IF_STATEMENT_NODE:
+        {
+            //IF LPARENTHESES expression RPARENTHESES statement else_statement
+            //CMP R0, R1, R2, R3; // R0.x = (R1.x < 0.0) ? R2.x : R3.x; Same applies for y, z, w
+            
+            //set a variable passing in for statement
+            //if the value is 1, print all the code
+            //else, don't print anything
+            
+            
+            
+        }
             break;
             
         case ELSE_STATEMENT_NODE:
