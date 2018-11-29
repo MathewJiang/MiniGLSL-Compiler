@@ -222,10 +222,17 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             genCode_help(ast->assign_statement.expr, 0, curr_scope);
             
             reg* assign_expr_reg = get_register(ast->assign_statement.expr);
-            reg* assign_stmt_reg = get_register(ast);
+            // Corner case fix: Vectors accessed via index shouldn't incur a new register allocation.
+            bool is_assign_var_vec = ast->assign_statement.var->var_node.is_vec;
+            reg* assign_stmt_reg =  (is_assign_var_vec)
+                ? get_latest_register_by_id(ast->assign_statement.var->var_node.id, curr_scope)
+                : get_register(ast);
+                
+            if (!is_assign_var_vec) { // only declare new register if assigned variable is not vectorly-accessed. i.e. var[idx] = blah.
+                fprintf(outputFile, "TEMP ");
+                fprintf(outputFile, "%s;\n", assign_stmt_reg->reg_name);
+            }
             
-            fprintf(outputFile, "TEMP ");
-            fprintf(outputFile, "%s;\n", assign_stmt_reg->reg_name);
             fprintf(outputFile, "MOV ");
             if (ast->assign_statement.var != NULL) {
                 if (ast->assign_statement.var->var_node.is_vec) {
@@ -237,7 +244,8 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
                 }
                 
                 // IMPORTANT: Change the node reference in symbol table to current node.
-                if (!get_predef_var_by_id(ast->assign_statement.var->var_node.id)) {
+                // Fix this doesn't apply to vectorly-accessed variables. The node reference is NOT overriden.
+                if (!is_assign_var_vec && !get_predef_var_by_id(ast->assign_statement.var->var_node.id)) {
                     sentry* sentry_to_update = find_latest_sentry_by_id(ast->assign_statement.var->var_node.id, curr_scope);
                     sentry_to_update->node_ref = ast; // Let it segfault if this returns NULL. What happened?
                 }
