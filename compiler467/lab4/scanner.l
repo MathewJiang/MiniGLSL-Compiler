@@ -229,7 +229,7 @@ float                       { yTRACE(FLOAT_T); return FLOAT_T; }
 				while (!isEnd) {
 					c = input();
 					if (isStar && c == '/') {
-						printf("Comment detected\n");
+						//printf("Comment detected\n");
 						isEnd = 1;
 						break;
 					} else {

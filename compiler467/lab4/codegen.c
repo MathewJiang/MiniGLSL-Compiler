@@ -56,6 +56,7 @@ int temp_reg_counter = 0;
  *      0. default mode
  *      1. constructor mode
  *      2. function mode
+ *      3. contains predefined variables
  *      TBA.
  * 
  */
@@ -107,10 +108,20 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             
             //FIXME: genCode(ast->declaration.type);
             genCode_help(ast->declaration.expr, 0, curr_scope);
-            reg* decl_id_reg = get_register(ast);
             
+            reg* decl_id_reg = get_register(ast);
             fprintf(outputFile, "TEMP ");
             fprintf(outputFile, "%s;\n", decl_id_reg->reg_name);
+            
+            if (ast->declaration.expr != NULL) {
+                predef_var* pv = get_predef_var_by_id(ast->declaration.expr->var_node.id);
+                if (pv != NULL) {
+                    fprintf(outputFile, "MOV ");
+                    fprintf(outputFile, "%s, ", decl_id_reg->reg_name);
+                    fprintf(outputFile, "%s;\n", get_glob_reg_name_by_id(ast->declaration.expr->var_node.id));
+                }
+            }
+            
             
             if (ast->declaration.expr != NULL) {
                 reg* decl_expr_reg = get_register(ast->declaration.expr);
@@ -132,15 +143,10 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
         case VAR_NODE:
         {
             //TODO: 
-            char* var_reg_name = get_glob_reg_name_by_id(ast->var_node.id);
-            if (var_reg_name != NULL) {
-                fprintf(outputFile, "%s", var_reg_name);
-            } else {
-                if (mode == 2) {
-                    //if a function call
-                    reg* var_reg = get_register(ast);
-                    fprintf(outputFile, "%s", var_reg->reg_name);
-                }
+            if (mode == 2) {
+                //if a function call
+                reg* var_reg = get_register(ast);
+                fprintf(outputFile, "%s", var_reg->reg_name);
             }
         }
             break;
@@ -209,7 +215,7 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             
         case ASSIGNMENT_STATEMENT_NODE:
         {
-            // MUST OVERRIDE SYMBOL ENTRY'S NODE_REF TO THIS NODE WHEN REASSIGNING VARIABLE VALUES!!!
+            //MUST OVERRIDE SYMBOL ENTRY'S NODE_REF TO THIS NODE WHEN REASSIGNING VARIABLE VALUES!!!
             //TODO: variable ASSIGNMENT expression SEMICOLON
             fprintf(outputFile, "#ASSIGMENT @ line %d\n", ast->line_num);
             genCode_help(ast->assign_statement.var, 0, curr_scope);

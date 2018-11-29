@@ -192,7 +192,7 @@ void ast_free(node *ast) {
     //TODO: do a recursive free (post-function)
     ast_destroy_help(ast);
     ast = NULL;
-    printf("\nSuccessfully deallocated AST.\n");
+    //printf("\nSuccessfully deallocated AST.\n");
 }
 
 void ast_destroy_help(node *ast) {
