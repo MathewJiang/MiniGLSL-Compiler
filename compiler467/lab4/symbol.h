@@ -32,6 +32,7 @@ struct snode_entry {
     bool valid;
     struct snode_entry* next;
     struct snode_entry* prev;
+    node* node_ref;     // used in lab4
 };
 typedef struct snode_entry sentry;
 

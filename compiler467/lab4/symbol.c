@@ -19,6 +19,7 @@ sentry* sentry_alloc() {
     
     new_sentry->next = NULL;
     new_sentry->prev = NULL;
+    new_sentry->node_ref = NULL;
     return new_sentry;
 }
 
@@ -127,7 +128,10 @@ sentry* ast_node_to_sentry(node* ast_node) {
     sentry_type type = name_to_stype(ast_node->declaration.type->type_node.type_name);
     if (type == UNKNOWN_TYPE) return NULL;
     
-    return sentry_alloc(id, type, is_const, is_vec, vec_size);
+    sentry* result = sentry_alloc(id, type, is_const, is_vec, vec_size);
+    result->node_ref = ast_node;
+            
+    return result;
 }
 
 // Snode functions
