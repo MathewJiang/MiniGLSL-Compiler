@@ -6,6 +6,7 @@
 #include "semantic.h"
 #include "symbol.h"
 #include "common.h"
+#include "parser.tab.h"
 
 /**********************************************************************
  * Global stuffs go here
@@ -39,6 +40,7 @@ reg* find_register_by_reg_name(char* reg_name);
 char* get_glob_reg_name_by_id(char* id);
 reg* get_latest_register_by_id(char* id, snode* current_scope);
 void print_index_from_num(int i);
+void print_binary_op_cmd(int opcode);
 
 // Global variables
 reg* reg_head = NULL;
@@ -58,6 +60,8 @@ int temp_reg_counter = 0;
  *      2. function mode
  *      3. contains predefined variables
  *      4. if stmt
+ * 
+ *      7. binary op
  *      TBA.
  * 
  */
@@ -206,19 +210,20 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
 
         case BINARY_EXPRESSION_NODE:
         {
-            //TODO: 
-//            fprintf(outputFile, "#BINARY @ line %d\n", ast->line_num);
-//            
-//            if (ast->binary_expr.op == ADD) {
-//                fprintf(outputFile, "ADD ");
-//            } else if (ast->binary_expr.op == SUBTRACT) {
-//                fprintf(outputFile, "SUB ");
-//            } else if (ast->binary_expr.op == MULTIPLY) {
-//                fprintf(outputFile, "MUL ");
-//            } else if (ast->binary_expr.op == DIVIDE) {
-//                fprintf(outputFile, "DIV ");
-//            }
+
+            //ADD dst, op1, op2
+            reg* bi_reg = get_register(ast);
+            fprintf(outputFile, "TEMP %s;\n", bi_reg->reg_name);
             
+            genCode_help(ast->binary_expr.left, 7, curr_scope);
+            genCode_help(ast->binary_expr.right, 7, curr_scope);
+            print_binary_op_cmd(ast->binary_expr.op);
+            reg* left_reg = get_register(ast->binary_expr.left);
+            reg* right_reg = get_register(ast->binary_expr.right);
+            
+            fprintf(outputFile, "%s, ", bi_reg->reg_name);
+            fprintf(outputFile, "%s, ", left_reg->reg_name);
+            fprintf(outputFile, "%s;\n", right_reg->reg_name);
         }
             break;
             
@@ -534,6 +539,24 @@ void print_index_from_num(int i) {
             break;
         default:
             printf("Error: [print_index_from_num]: i not in range\n");
+            break;
+    }
+}
+
+void print_binary_op_cmd(int opcode) {
+    switch(opcode) {
+        case ADD:
+            fprintf(outputFile, "ADD, ");
+            break;
+        case SUBTRACT:
+            fprintf(outputFile, "SUB, ");
+            break;
+        case MULTIPLY:
+            fprintf(outputFile, "MUL, ");
+            break;
+        default:
+            printf("Error: [print_binary_op_cmd]: unexpected operator type\n");
+            exit(1);
             break;
     }
 }
