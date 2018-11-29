@@ -23,7 +23,7 @@ typedef struct ast_register {
     node* ast_node;
     char* reg_name;
     enum reg_type type;
-    int value;
+    float value;
 } reg;
 
 // Function declarations
@@ -57,6 +57,7 @@ int temp_reg_counter = 0;
  *      1. constructor mode
  *      2. function mode
  *      3. contains predefined variables
+ *      4. if stmt
  *      TBA.
  * 
  */
@@ -84,8 +85,8 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
         case NESTED_SCOPE_NODE:
             // push nested scope onto symbol table
             curr_scope = snode_alloc(curr_scope);
-            genCode_help(ast->scope.declarations, 0, curr_scope);
-            genCode_help(ast->scope.statements, 0, curr_scope);
+            genCode_help(ast->nested_scope.scope->scope.declarations, 0, curr_scope);
+            genCode_help(ast->nested_scope.scope->scope.statements, 0, curr_scope);
             // Destroy current scope.
             snode_destroy(curr_scope);
             curr_scope = NULL;
@@ -183,6 +184,17 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
                     float t_var = 1.0;
                     fprintf(outputFile, "%f", t_var);
                 }
+            } else {
+                reg* float_reg = get_register(ast);
+                if (ast->bool_val == 0) {
+                    float f_var = 0.0;
+                    fprintf(outputFile, "PARAM %s = %f;\n", float_reg->reg_name, f_var);
+                    float_reg->value = 0.0;
+                } else {
+                    float t_var = 1.0;
+                    fprintf(outputFile, "PARAM %s = %f;\n", float_reg->reg_name, t_var);
+                    float_reg->value = 1.0;
+                }
             }
             break;
            
@@ -195,6 +207,17 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
         case BINARY_EXPRESSION_NODE:
         {
             //TODO: 
+//            fprintf(outputFile, "#BINARY @ line %d\n", ast->line_num);
+//            
+//            if (ast->binary_expr.op == ADD) {
+//                fprintf(outputFile, "ADD ");
+//            } else if (ast->binary_expr.op == SUBTRACT) {
+//                fprintf(outputFile, "SUB ");
+//            } else if (ast->binary_expr.op == MULTIPLY) {
+//                fprintf(outputFile, "MUL ");
+//            } else if (ast->binary_expr.op == DIVIDE) {
+//                fprintf(outputFile, "DIV ");
+//            }
             
         }
             break;
@@ -208,8 +231,16 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             //set a variable passing in for statement
             //if the value is 1, print all the code
             //else, don't print anything
-            
-            
+            genCode_help(ast->if_statement_node.if_condition, 4, curr_scope);
+            reg* if_reg = get_register(ast->if_statement_node.if_condition);
+            if (if_reg->value == 0.0) {
+                genCode_help(ast->if_statement_node.else_statement, 4, curr_scope);
+            } else if (if_reg->value == 1.0) {
+                genCode_help(ast->if_statement_node.statement, 4, curr_scope);
+            } else {
+                printf("\nError: [IF_CONDITION]: incorrect condition type\n");
+                exit(1);
+            }
             
         }
             break;
