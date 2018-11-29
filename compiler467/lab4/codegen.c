@@ -39,6 +39,99 @@ char* get_predef_reg_name_by_id(char* id);
  * get_new_reg
  * allocate a new register for the input node
  */
+reg* get_new_reg(node* ast_node) {
+    //TODO: 
+    reg* new_reg = (reg *)malloc(sizeof(reg));
+    new_reg->reg_name = "new_reg";
+    return new_reg;
+}
+
+/*
+ * 
+ */
+void print_index_from_num(int i) {
+    switch(i) {
+        case 1:
+            printf("x");
+            break;
+        case 2:
+            printf("y");
+            break;
+        case 3:
+            printf("z");
+            break;
+        case 4:
+            printf("w");
+            break;
+        default:
+            printf("Error: [print_index_from_num]: i not in range\n");
+            break;
+    }
+}
+
+//
+///*
+// * constructor_ARB_help
+// * helper methods specifically for constructor ARB code print
+// */
+//void constructor_ARB_help(node* constr_node) {
+//    if (ast == NULL) {
+//        return;
+//    }
+//
+//    node_kind kind = ast->kind;
+//    switch (kind) {
+//        case SCOPE_NODE:
+//        {
+//            printf("scope node\n");
+//        }
+//            break;
+//            
+//        case CONSTRUCTOR_NODE: 
+//        {
+//            fprintf(outputFile, "MOV ");
+//            reg* constr_reg = get_new_reg(ast);
+//            if (!constr_reg) {
+//                fprintf(outputFile, "%s, ", constr_reg->reg_name);
+//            } else {
+//                //FIXME: rm printf statements
+//                printf("Error: [constructor_ARB_help]: register is NULL\n");
+//                errorOccurred = true;
+//                exit(1);
+//            }
+//            fprintf(outputFile, "{");
+//            constructor_ARB_help(&(ast->constructor.args));
+//            fprintf(outputFile, "}\n");
+//        }
+//            break;
+//            
+//        case ARGS_NODE:
+//            constructor_ARB_help(&(ast->args_node.args));
+//            fprintf(outputFile, ", ");
+//            constructor_ARB_help(&(ast->args_node.expr));
+//            break;
+//        
+//        case INT_NODE:
+//            fprintf(outputFile, "%d", ast->int_val);
+//            break;
+//
+//        case FLOAT_NODE:
+//            fprintf(outputFile, "%f", ast->float_val);
+//            break;
+//
+//        case BOOL_NODE:
+//            if (ast->bool_val == 0) {
+//                fprintf(outputFile, "0.0");
+//            } else {
+//                fprintf(outputFile, "1.0");
+//            }
+//            break;
+//        
+//        default:
+//            printf("Error: [constructor_ARB_help] unexpected node type\n");
+//            break;
+//    }
+//}
 
 // Global variables
 reg* reg_head = NULL;
@@ -58,7 +151,7 @@ int temp_reg_counter = 0;
  * 
  */
 void genCode_help(node* ast, int mode) {
-        if (ast == NULL) {
+    if (ast == NULL) {
         return;
     }
 
@@ -78,11 +171,31 @@ void genCode_help(node* ast, int mode) {
             break;
 
         case DECLARATION_NODE:
+        {
+            //type ID SEMICOLON
+            //|   type ID ASSIGNMENT expression SEMICOLON
+            //|   CONST type ID ASSIGNMENT expression SEMICOLON
+            fprintf(outputFile, "#DECLARATION @ line %d\n", ast->line_num);
+            
             //FIXME: genCode(ast->declaration.type);
             genCode_help(ast->declaration.expr, 0);
+            reg* decl_id_reg = get_register(ast);
+            
+            fprintf(outputFile, "TEMP ");
+            fprintf(outputFile, "%s;\n", decl_id_reg->reg_name);
+            
+            if (ast->declaration.expr != NULL) {
+                reg* decl_expr_reg = get_register(ast->declaration.expr);
+                fprintf(outputFile, "MOV ");
+                fprintf(outputFile, "%s, ", decl_id_reg->reg_name);
+                fprintf(outputFile, "%s;\n", decl_expr_reg->reg_name);
+            }
+        }
             break;
             
         case STATEMENTS_NODE:
+            genCode_help(ast->statements.statements, 0);
+            genCode_help(ast->statements.statement, 0);
             break;
         
         case TYPE_NODE:
@@ -90,9 +203,11 @@ void genCode_help(node* ast, int mode) {
 
         case VAR_NODE:
         {
-            char* reg_name = get_predef_reg_name_by_id(ast->var_node.id);
-            if (reg_name != NULL) {
-                fprintf(outputFile, "", reg_name);
+            //TODO: 
+            char* var_reg_name = get_predef_reg_name_by_id(ast->var_node.id);
+            if (var_reg_name != NULL) {
+                fprintf(outputFile, "%s", var_reg_name);
+            } else {
             }
         }
             break;
@@ -100,21 +215,30 @@ void genCode_help(node* ast, int mode) {
         case INT_NODE:
             if (mode == 1) {
                 fprintf(outputFile, "%d", ast->int_val);
+            } else {
+                //FIXME: 
+                reg* int_reg = get_register(ast);
+                fprintf(outputFile, "PARAM %s = %d;\n", int_reg->reg_name, ast->int_val);
             }
             break;
 
         case FLOAT_NODE:
             if (mode == 1) {
                 fprintf(outputFile, "%f", ast->float_val);
+            }else {
+                reg* float_reg = get_register(ast);
+                fprintf(outputFile, "PARAM %s = %f;\n", float_reg->reg_name, ast->float_val);
             }
             break;
 
         case BOOL_NODE:
             if (mode == 1) {
                 if (ast->bool_val == 0) {
-                    fprintf(outputFile, "0.0");
+                    float f_var = 0.0;
+                    fprintf(outputFile, "%f", f_var);
                 } else {
-                    fprintf(outputFile, "1.0");
+                    float t_var = 1.0;
+                    fprintf(outputFile, "%f", t_var);
                 }
             }
             break;
@@ -152,7 +276,29 @@ void genCode_help(node* ast, int mode) {
             
         case ASSIGNMENT_STATEMENT_NODE:
         {
-            //TODO: 
+            //TODO: variable ASSIGNMENT expression SEMICOLON
+            fprintf(outputFile, "#ASSIGMENT @ line %d\n", ast->line_num);
+            genCode_help(ast->assign_statement.var, 0);
+            genCode_help(ast->assign_statement.expr, 0);
+            
+            reg* assign_var_reg = get_register(ast->assign_statement.var);
+            reg* assign_expr_reg = get_register(ast->assign_statement.expr);
+            
+            fprintf(outputFile, "MOV ");
+            if (ast->assign_statement.var != NULL) {
+                if (ast->assign_statement.var->var_node.is_vec) {
+                    fprintf(outputFile, "%s.", assign_var_reg->reg_name);
+                    print_index_from_num(ast->assign_statement.var->var_node.vec_idx);
+                    fprintf(outputFile, ", ");
+                } else {
+                    fprintf(outputFile, "%s, ", assign_var_reg->reg_name);
+                }
+            } else {
+                printf("Error: [ASSIGNMENT_STMT_NODE]: ast->assign_statement.var is NULL\n");
+                exit(1);
+            }
+            
+            fprintf(outputFile, "%s;\n", assign_expr_reg->reg_name);
         }
             break;
 
@@ -168,9 +314,9 @@ void genCode_help(node* ast, int mode) {
         {
             //type LPARENTHESES arguments RPARENTHESES
             //TODO: 
-            fprintf(outputFile, "MOV ");
             reg* constr_reg = get_register(ast);
-            //reg* garbage_reg = get_register(ast->constructor.args);
+            fprintf(outputFile, "TEMP %s;\n", constr_reg->reg_name);
+            fprintf(outputFile, "MOV ");
             if (constr_reg != NULL) {
                 fprintf(outputFile, "%s, ", constr_reg->reg_name);
                 //fprintf(outputFile, "%s, ", garbage_reg->reg_name);
@@ -182,7 +328,7 @@ void genCode_help(node* ast, int mode) {
             }
             fprintf(outputFile, "{");
             genCode_help(ast->constructor.args, 1);
-            fprintf(outputFile, "}");
+            fprintf(outputFile, "};\n");
         }
             break;
             
@@ -316,5 +462,7 @@ char* get_predef_reg_name_by_id(char* id) {
  * output into frag.txt file
  */
 void genCode(node *ast) {
+    fprintf(outputFile, "!!ARBfp1.0\n\n");
     genCode_help(ast, 0);
+    fprintf(outputFile, "\nEND\n");
 }
