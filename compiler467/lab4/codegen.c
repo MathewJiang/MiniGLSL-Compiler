@@ -51,16 +51,16 @@ reg* get_new_reg(node* ast_node) {
  */
 void print_index_from_num(int i) {
     switch(i) {
-        case 1:
+        case 0:
             printf("x");
             break;
-        case 2:
+        case 1:
             printf("y");
             break;
-        case 3:
+        case 2:
             printf("z");
             break;
-        case 4:
+        case 3:
             printf("w");
             break;
         default:
@@ -147,6 +147,7 @@ int temp_reg_counter = 0;
  * mode: 
  *      0. default mode
  *      1. constructor mode
+ *      2. function mode
  *      TBA.
  * 
  */
@@ -208,6 +209,11 @@ void genCode_help(node* ast, int mode) {
             if (var_reg_name != NULL) {
                 fprintf(outputFile, "%s", var_reg_name);
             } else {
+                if (mode == 2) {
+                    //if a function call
+                    reg* var_reg = get_register(ast);
+                    fprintf(outputFile, "%s", var_reg->reg_name);
+                }
             }
         }
             break;
@@ -306,7 +312,23 @@ void genCode_help(node* ast, int mode) {
         {
             //FUNC_ID LPARENTHESES arguments_opt RPARENTHESES
             //TODO: 
+            fprintf(outputFile, "#FUNCTION @ line %d\n", ast->line_num);
+            reg* func_reg = get_register(ast);
+            fprintf(outputFile, "TEMP %s;\n", func_reg->reg_name);
             
+            char* func_id = ast->function.func_id;
+            if (strcmp(func_id, "rsq")) {
+                fprintf(outputFile, "RSQ ");
+            } else if (strcmp(func_id, "dp3")) {
+                fprintf(outputFile, "DP3 ");
+            } else if (strcmp(func_id, "lit")) {
+                fprintf(outputFile, "LIT ");
+            } else {
+                printf("Error: [FUNCTION]: unknown func_id\n");
+                exit(1);
+            }
+            genCode_help(ast->function.args, 2);
+            fprintf(outputFile, ";\n");
         }
             break;
             
