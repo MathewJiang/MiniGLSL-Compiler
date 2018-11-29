@@ -437,8 +437,8 @@ char* get_glob_reg_name_by_id(char* id) {
 }
 
 reg* get_glob_reg_by_predef_id(char* predef_id) {
-    if (!predef_id || !get_glob_reg_name_by_id(predef_id)) return NULL;
-    char* glob_reg_name = get_glob_reg_name_by_id(predef_id);
+    if (!predef_id) return NULL;
+    char* glob_reg_name = predef_id;
     reg* glob_reg = find_register_by_reg_name(glob_reg_name);
     if (!glob_reg) {
         // Allocate a global register
