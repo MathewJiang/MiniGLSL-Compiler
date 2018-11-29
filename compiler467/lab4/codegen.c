@@ -444,13 +444,11 @@ reg* alloc_register(node* ast_node) {
             // May be Param type, check if the declr is const.
             if (ast_node->declaration.is_const) {
                 result->type = PARAM_REG_TYPE;
-                sprintf(nameBuf, "param_reg_%d_%s", param_reg_counter++, ast_node->declaration.id);
-                result->reg_name = nameBuf;
             } else {
                 result->type = TEMP_REG_TYPE;
-                sprintf(nameBuf, "temp_reg_%d_%s", temp_reg_counter++, ast_node->declaration.id);
-                result->reg_name = nameBuf;
             }
+            sprintf(nameBuf, "tempVar%d", temp_reg_counter++);
+            result->reg_name = nameBuf;
             break;
         case VAR_NODE:
             // Can be Global(predef_var) type and specific name.
@@ -462,7 +460,7 @@ reg* alloc_register(node* ast_node) {
                 result->reg_name = get_glob_reg_name_by_id(ast_node->var_node.id);
             } else {
                 result->type = TEMP_REG_TYPE;
-                sprintf(nameBuf, "temp_reg_%d_%s", temp_reg_counter++, ast_node->var_node.id);
+                sprintf(nameBuf, "tempVar%d", temp_reg_counter++);
                 result->reg_name = nameBuf;
             }
             break;
@@ -470,7 +468,7 @@ reg* alloc_register(node* ast_node) {
         default:
             // All other nodes deserve temp register.
             result->type = TEMP_REG_TYPE;
-            sprintf(nameBuf, "temp_reg_%d", temp_reg_counter++);
+            sprintf(nameBuf, "tempVar%d", temp_reg_counter++);
             result->reg_name = nameBuf;
             break;
         
