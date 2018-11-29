@@ -119,15 +119,12 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
                     fprintf(outputFile, "MOV ");
                     fprintf(outputFile, "%s, ", decl_id_reg->reg_name);
                     fprintf(outputFile, "%s;\n", get_glob_reg_name_by_id(ast->declaration.expr->var_node.id));
+                } else {
+                    reg* decl_expr_reg = get_register(ast->declaration.expr);
+                    fprintf(outputFile, "MOV ");
+                    fprintf(outputFile, "%s, ", decl_id_reg->reg_name);
+                    fprintf(outputFile, "%s;\n", decl_expr_reg->reg_name);
                 }
-            }
-            
-            
-            if (ast->declaration.expr != NULL) {
-                reg* decl_expr_reg = get_register(ast->declaration.expr);
-                fprintf(outputFile, "MOV ");
-                fprintf(outputFile, "%s, ", decl_id_reg->reg_name);
-                fprintf(outputFile, "%s;\n", decl_expr_reg->reg_name);
             }
         }
             break;
@@ -145,7 +142,7 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             //TODO: 
             if (mode == 2) {
                 //if a function call
-                reg* var_reg = get_register(ast);
+                reg* var_reg = get_latest_register_by_id(ast->var_node.id, curr_scope);
                 fprintf(outputFile, "%s", var_reg->reg_name);
             }
         }
@@ -221,7 +218,7 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             genCode_help(ast->assign_statement.var, 0, curr_scope);
             genCode_help(ast->assign_statement.expr, 0, curr_scope);
             
-            reg* assign_var_reg = get_register(ast->assign_statement.var);
+            reg* assign_var_reg = get_latest_register_by_id(ast->assign_statement.var->var_node.id, curr_scope);
             reg* assign_expr_reg = get_register(ast->assign_statement.expr);
             
             fprintf(outputFile, "MOV ");
@@ -243,7 +240,17 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
                 exit(1);
             }
             
-            fprintf(outputFile, "%s;\n", assign_expr_reg->reg_name);
+            
+            if (ast->assign_statement.expr->kind == VAR_NODE) {
+                reg* assign_expr_var_reg = get_latest_register_by_id(ast->assign_statement.expr->var_node.id, curr_scope);
+                if (assign_expr_var_reg == NULL) {
+                    printf("ERROR: [ASSIGNMENT] var_reg is NULL\n");
+                    exit(1);
+                }
+                fprintf(outputFile, "%s;\n", assign_expr_var_reg->reg_name);
+            } else {
+                fprintf(outputFile, "%s;\n", assign_expr_reg->reg_name);
+            }
         }
             break;
 
@@ -256,16 +263,18 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             fprintf(outputFile, "TEMP %s;\n", func_reg->reg_name);
             
             char* func_id = ast->function.func_id;
-            if (strcmp(func_id, "rsq")) {
+            if (!strcmp(func_id, "rsq")) {
                 fprintf(outputFile, "RSQ ");
-            } else if (strcmp(func_id, "dp3")) {
+            } else if (!strcmp(func_id, "dp3")) {
                 fprintf(outputFile, "DP3 ");
-            } else if (strcmp(func_id, "lit")) {
+            } else if (!strcmp(func_id, "lit")) {
                 fprintf(outputFile, "LIT ");
             } else {
                 printf("Error: [FUNCTION]: unknown func_id\n");
                 exit(1);
             }
+            
+            fprintf(outputFile, "%s, ", func_reg->reg_name);
             genCode_help(ast->function.args, 2, curr_scope);
             fprintf(outputFile, ";\n");
         }
@@ -447,7 +456,7 @@ reg* get_glob_reg_by_predef_id(char* predef_id) {
 // Find the register for a variable in the most local scope. Return global register for predefined variables.
 // Purpose of this is to get the register for a variable id in any scope.
 reg* get_latest_register_by_id(char* id, snode* current_scope) {
-    if (!id || current_scope) return NULL;
+    if (!id || !current_scope) return NULL;
     if (get_glob_reg_name_by_id(id)) return get_glob_reg_by_predef_id(get_glob_reg_name_by_id(id));
     // Consult the symbol table for the most local variable's node.
     sentry* latest_sentry = find_latest_sentry_by_id(id, current_scope);
