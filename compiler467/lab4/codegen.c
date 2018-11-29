@@ -213,17 +213,42 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
 
             //ADD dst, op1, op2
             reg* bi_reg = get_register(ast);
-            fprintf(outputFile, "TEMP %s;\n", bi_reg->reg_name);
             
             genCode_help(ast->binary_expr.left, 7, curr_scope);
             genCode_help(ast->binary_expr.right, 7, curr_scope);
+            
+            fprintf(outputFile, "TEMP %s;\n", bi_reg->reg_name);
             print_binary_op_cmd(ast->binary_expr.op);
             reg* left_reg = get_register(ast->binary_expr.left);
             reg* right_reg = get_register(ast->binary_expr.right);
             
             fprintf(outputFile, "%s, ", bi_reg->reg_name);
-            fprintf(outputFile, "%s, ", left_reg->reg_name);
-            fprintf(outputFile, "%s;\n", right_reg->reg_name);
+            fprintf(outputFile, "%s", left_reg->reg_name);
+            if (ast->binary_expr.left) {
+                if (ast->binary_expr.left->var_node.is_vec) {
+                    if (ast->binary_expr.left->var_node.vec_idx == 0
+                            ||ast->binary_expr.left->var_node.vec_idx == 1
+                            ||ast->binary_expr.left->var_node.vec_idx == 2
+                            ||ast->binary_expr.left->var_node.vec_idx == 3) {
+                        fprintf(outputFile, ".");
+                        print_index_from_num(ast->binary_expr.left->var_node.vec_idx);
+                    }
+                }
+            }
+            fprintf(outputFile, ", ");
+            fprintf(outputFile, "%s", right_reg->reg_name);
+            if (ast->binary_expr.right) {
+                if (ast->binary_expr.right->var_node.is_vec) {
+                    if (ast->binary_expr.right->var_node.vec_idx == 0
+                            ||ast->binary_expr.right->var_node.vec_idx == 1
+                            ||ast->binary_expr.right->var_node.vec_idx == 2
+                            ||ast->binary_expr.right->var_node.vec_idx == 3) {
+                        fprintf(outputFile, ".");
+                        print_index_from_num(ast->binary_expr.right->var_node.vec_idx);
+                    }
+                }
+            }
+            fprintf(outputFile, ";\n");
         }
             break;
             
@@ -267,31 +292,54 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             reg* assign_stmt_reg =  (is_assign_var_vec)
                 ? get_latest_register_by_id(ast->assign_statement.var->var_node.id, curr_scope)
                 : get_register(ast);
-                
-            if (!is_assign_var_vec) { // only declare new register if assigned variable is not vectorly-accessed. i.e. var[idx] = blah.
+            
+            char* assignment_expr_predef_reg = get_glob_reg_name_by_id(ast->assign_statement.var->var_node.id);
+            int is_predef_var_assign = 0;
+            if (assignment_expr_predef_reg != NULL) {
+                is_predef_var_assign = 1;
+            }
+            
+            if (!is_assign_var_vec && !is_predef_var_assign) { // only declare new register if assigned variable is not vectorly-accessed. i.e. var[idx] = blah.
                 fprintf(outputFile, "TEMP ");
                 fprintf(outputFile, "%s;\n", assign_stmt_reg->reg_name);
             }
             
             fprintf(outputFile, "MOV ");
-            if (ast->assign_statement.var != NULL) {
+            if (is_predef_var_assign) {
                 if (ast->assign_statement.var->var_node.is_vec) {
-                    fprintf(outputFile, "%s.", assign_stmt_reg->reg_name);
+                    fprintf(outputFile, "%s.", assignment_expr_predef_reg);
                     print_index_from_num(ast->assign_statement.var->var_node.vec_idx);
                     fprintf(outputFile, ", ");
-                } else {
-                    fprintf(outputFile, "%s, ", assign_stmt_reg->reg_name);
-                }
+                    } else {
+                        fprintf(outputFile, "%s, ", assignment_expr_predef_reg);
+                    }
                 
-                // IMPORTANT: Change the node reference in symbol table to current node.
-                // Fix: this change doesn't apply to vectorly-accessed variables, since the node reference is NOT overriden.
-                if (!is_assign_var_vec && !get_predef_var_by_id(ast->assign_statement.var->var_node.id)) {
-                    sentry* sentry_to_update = find_latest_sentry_by_id(ast->assign_statement.var->var_node.id, curr_scope);
-                    sentry_to_update->node_ref = ast; // Let it segfault if this returns NULL. What happened?
-                }
+                    // IMPORTANT: Change the node reference in symbol table to current node.
+                    // Fix: this change doesn't apply to vectorly-accessed variables, since the node reference is NOT overriden.
+                    if (!is_assign_var_vec && !get_predef_var_by_id(ast->assign_statement.var->var_node.id)) {
+                        sentry* sentry_to_update = find_latest_sentry_by_id(ast->assign_statement.var->var_node.id, curr_scope);
+                        sentry_to_update->node_ref = ast; // Let it segfault if this returns NULL. What happened?
+                    }
             } else {
-                printf("Error: [ASSIGNMENT_STMT_NODE]: ast->assign_statement.var is NULL\n");
-                exit(1);
+                if (ast->assign_statement.var != NULL) {
+                    if (ast->assign_statement.var->var_node.is_vec) {
+                        fprintf(outputFile, "%s.", assign_stmt_reg->reg_name);
+                        print_index_from_num(ast->assign_statement.var->var_node.vec_idx);
+                        fprintf(outputFile, ", ");
+                    } else {
+                        fprintf(outputFile, "%s, ", assign_stmt_reg->reg_name);
+                    }
+
+                    // IMPORTANT: Change the node reference in symbol table to current node.
+                    // Fix: this change doesn't apply to vectorly-accessed variables, since the node reference is NOT overriden.
+                    if (!is_assign_var_vec && !get_predef_var_by_id(ast->assign_statement.var->var_node.id)) {
+                        sentry* sentry_to_update = find_latest_sentry_by_id(ast->assign_statement.var->var_node.id, curr_scope);
+                        sentry_to_update->node_ref = ast; // Let it segfault if this returns NULL. What happened?
+                    }
+                } else {
+                    printf("Error: [ASSIGNMENT_STMT_NODE]: ast->assign_statement.var is NULL\n");
+                    exit(1);
+                }
             }
             
             
@@ -538,7 +586,7 @@ void print_index_from_num(int i) {
             printf("w");
             break;
         default:
-            printf("Error: [print_index_from_num]: i not in range\n");
+            printf("Error: [print_index_from_num]: i: %d not in range\n", i);
             break;
     }
 }
@@ -546,13 +594,13 @@ void print_index_from_num(int i) {
 void print_binary_op_cmd(int opcode) {
     switch(opcode) {
         case ADD:
-            fprintf(outputFile, "ADD, ");
+            fprintf(outputFile, "ADD ");
             break;
         case SUBTRACT:
-            fprintf(outputFile, "SUB, ");
+            fprintf(outputFile, "SUB ");
             break;
         case MULTIPLY:
-            fprintf(outputFile, "MUL, ");
+            fprintf(outputFile, "MUL ");
             break;
         default:
             printf("Error: [print_binary_op_cmd]: unexpected operator type\n");
