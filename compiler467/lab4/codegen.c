@@ -139,11 +139,14 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
 
         case VAR_NODE:
         {
-            //TODO: 
-            if (mode == 2) {
-                //if a function call
-                reg* var_reg = get_latest_register_by_id(ast->var_node.id, curr_scope);
-                fprintf(outputFile, "%s", var_reg->reg_name);
+            //FIXME: rm code for check if a function call
+            predef_var* pv = NULL;
+            pv = get_predef_var_by_id(ast->var_node.id);
+            if (pv == NULL) {
+                if (mode == 2) {
+                    reg* var_reg = get_latest_register_by_id(ast->var_node.id, curr_scope);
+                    fprintf(outputFile, "%s", var_reg->reg_name);
+                }
             }
         }
             break;
@@ -218,22 +221,25 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             genCode_help(ast->assign_statement.var, 0, curr_scope);
             genCode_help(ast->assign_statement.expr, 0, curr_scope);
             
-            reg* assign_var_reg = get_latest_register_by_id(ast->assign_statement.var->var_node.id, curr_scope);
             reg* assign_expr_reg = get_register(ast->assign_statement.expr);
+            reg* assign_stmt_reg = get_register(ast);
             
+            fprintf(outputFile, "TEMP ");
+            fprintf(outputFile, "%s;\n", assign_stmt_reg->reg_name);
             fprintf(outputFile, "MOV ");
             if (ast->assign_statement.var != NULL) {
                 if (ast->assign_statement.var->var_node.is_vec) {
-                    fprintf(outputFile, "%s.", assign_var_reg->reg_name);
+                    fprintf(outputFile, "%s.", assign_stmt_reg->reg_name);
                     print_index_from_num(ast->assign_statement.var->var_node.vec_idx);
                     fprintf(outputFile, ", ");
                 } else {
-                    fprintf(outputFile, "%s, ", assign_var_reg->reg_name);
+                    fprintf(outputFile, "%s, ", assign_stmt_reg->reg_name);
                 }
                 
                 // IMPORTANT: Change the node reference in symbol table to current node.
                 if (!get_predef_var_by_id(ast->assign_statement.var->var_node.id)) {
-                    find_latest_sentry_by_id(ast->assign_statement.var->var_node.id, curr_scope)->node_ref = ast; // Let it segfault if this returns NULL. What happened?
+                    sentry* sentry_to_update = find_latest_sentry_by_id(ast->assign_statement.var->var_node.id, curr_scope);
+                    sentry_to_update->node_ref = ast; // Let it segfault if this returns NULL. What happened?
                 }
             } else {
                 printf("Error: [ASSIGNMENT_STMT_NODE]: ast->assign_statement.var is NULL\n");
