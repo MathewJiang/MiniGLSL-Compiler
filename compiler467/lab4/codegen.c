@@ -42,7 +42,7 @@ void print_index_from_num(int i);
 
 // Global variables
 reg* reg_head = NULL;
-snode* codegen_symbol_table = NULL;
+snode* codegen_root_scope = NULL;
 int param_reg_counter = 0;
 int temp_reg_counter = 0;
 /**********************************************************************
@@ -59,7 +59,7 @@ int temp_reg_counter = 0;
  *      TBA.
  * 
  */
-void genCode_help(node* ast, int mode) {
+void genCode_help(node* ast, int mode, snode* curr_scope) {
     if (ast == NULL) {
         return;
     }
@@ -67,16 +67,32 @@ void genCode_help(node* ast, int mode) {
     node_kind kind = ast->kind;
     switch (kind) {
         case SCOPE_NODE:
-            genCode_help(ast->scope.declarations, 0);
-            genCode_help(ast->scope.statements, 0);
+            if (!curr_scope) {
+                // Prepare the root scope.
+                codegen_root_scope = snode_alloc(NULL);
+                curr_scope = codegen_root_scope;
+            }
+            genCode_help(ast->scope.declarations, 0, curr_scope);
+            genCode_help(ast->scope.statements, 0, curr_scope);
+            
+            // Destroy the root scope.
+            snode_destroy(codegen_root_scope);
+            codegen_root_scope = NULL;
             break;
             
         case NESTED_SCOPE_NODE:
+            // push nested scope onto symbol table
+            curr_scope = snode_alloc(curr_scope);
+            genCode_help(ast->scope.declarations, 0, curr_scope);
+            genCode_help(ast->scope.statements, 0, curr_scope);
+            // Destroy current scope.
+            snode_destroy(curr_scope);
+            curr_scope = NULL;
             break;
             
         case DECLARATIONS_NODE:
-            genCode_help(ast->declarations.declarations, 0);
-            genCode_help(ast->declarations.declaration, 0);
+            genCode_help(ast->declarations.declarations, 0, curr_scope);
+            genCode_help(ast->declarations.declaration, 0, curr_scope);
             break;
 
         case DECLARATION_NODE:
@@ -85,9 +101,12 @@ void genCode_help(node* ast, int mode) {
             //|   type ID ASSIGNMENT expression SEMICOLON
             //|   CONST type ID ASSIGNMENT expression SEMICOLON
             fprintf(outputFile, "#DECLARATION @ line %d\n", ast->line_num);
+            // Push the declared variable onto symbol table.
+            sentry* newly_declared_sentry = ast_node_to_sentry(ast);
+            sentry_push(newly_declared_sentry, curr_scope);
             
             //FIXME: genCode(ast->declaration.type);
-            genCode_help(ast->declaration.expr, 0);
+            genCode_help(ast->declaration.expr, 0, curr_scope);
             reg* decl_id_reg = get_register(ast);
             
             fprintf(outputFile, "TEMP ");
@@ -103,8 +122,8 @@ void genCode_help(node* ast, int mode) {
             break;
             
         case STATEMENTS_NODE:
-            genCode_help(ast->statements.statements, 0);
-            genCode_help(ast->statements.statement, 0);
+            genCode_help(ast->statements.statements, 0, curr_scope);
+            genCode_help(ast->statements.statement, 0, curr_scope);
             break;
         
         case TYPE_NODE:
@@ -193,8 +212,8 @@ void genCode_help(node* ast, int mode) {
             // MUST OVERRIDE SYMBOL ENTRY'S NODE_REF TO THIS NODE WHEN REASSIGNING VARIABLE VALUES!!!
             //TODO: variable ASSIGNMENT expression SEMICOLON
             fprintf(outputFile, "#ASSIGMENT @ line %d\n", ast->line_num);
-            genCode_help(ast->assign_statement.var, 0);
-            genCode_help(ast->assign_statement.expr, 0);
+            genCode_help(ast->assign_statement.var, 0, curr_scope);
+            genCode_help(ast->assign_statement.expr, 0, curr_scope);
             
             reg* assign_var_reg = get_register(ast->assign_statement.var);
             reg* assign_expr_reg = get_register(ast->assign_statement.expr);
@@ -207,6 +226,11 @@ void genCode_help(node* ast, int mode) {
                     fprintf(outputFile, ", ");
                 } else {
                     fprintf(outputFile, "%s, ", assign_var_reg->reg_name);
+                }
+                
+                // IMPORTANT: Change the node reference in symbol table to current node.
+                if (!get_predef_var_by_id(ast->assign_statement.var->var_node.id)) {
+                    find_latest_sentry_by_id(ast->assign_statement.var->var_node.id, curr_scope)->node_ref = ast; // Let it segfault if this returns NULL. What happened?
                 }
             } else {
                 printf("Error: [ASSIGNMENT_STMT_NODE]: ast->assign_statement.var is NULL\n");
@@ -236,7 +260,7 @@ void genCode_help(node* ast, int mode) {
                 printf("Error: [FUNCTION]: unknown func_id\n");
                 exit(1);
             }
-            genCode_help(ast->function.args, 2);
+            genCode_help(ast->function.args, 2, curr_scope);
             fprintf(outputFile, ";\n");
         }
             break;
@@ -258,17 +282,17 @@ void genCode_help(node* ast, int mode) {
                 exit(1);
             }
             fprintf(outputFile, "{");
-            genCode_help(ast->constructor.args, 1);
+            genCode_help(ast->constructor.args, 1, curr_scope);
             fprintf(outputFile, "};\n");
         }
             break;
             
         case ARGS_NODE:
-            genCode_help(ast->args_node.args, mode);
+            genCode_help(ast->args_node.args, mode, curr_scope);
             if (ast->args_node.args != NULL) {
                 fprintf(outputFile, ", ");
             }
-            genCode_help(ast->args_node.expr, mode);
+            genCode_help(ast->args_node.expr, mode, curr_scope);
             break;
             
         default:
@@ -457,6 +481,6 @@ void print_index_from_num(int i) {
  */
 void genCode(node *ast) {
     fprintf(outputFile, "!!ARBfp1.0\n\n");
-    genCode_help(ast, 0);
+    genCode_help(ast, 0, codegen_root_scope);
     fprintf(outputFile, "\nEND\n");
 }
