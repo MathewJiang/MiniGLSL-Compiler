@@ -10,15 +10,14 @@
 /**********************************************************************
  * Global stuffs go here
  *********************************************************************/ 
-// Function declarations
+// Global structures
 typedef enum reg_type {
     UNKNOWN_REG_TYPE = 3056,
-    PARAM_REG_TYPE = 3057,
-    TEMP_REG_TYPE = 3058,
-    GLOB_REG_TYPE = 3059        
+    PARAM_REG_TYPE = 3057,      // Used for const declarations 
+    TEMP_REG_TYPE = 3058,       // Used for all usual cases
+    GLOB_REG_TYPE = 3059        // Used for global predefined variables
 } reg_type;
 
-// Global structures
 typedef struct ast_register {
     struct ast_register* next;
     node* ast_node;
@@ -27,125 +26,24 @@ typedef struct ast_register {
     int value;
 } reg;
 
+// Function declarations
 
-reg* get_register(node* ast_node) {
-    return NULL;
-}
+// Register helpers
+reg* get_register(node* ast_node);
+void add_register(reg* _reg);
+reg* alloc_register(node* ast_node);
+reg* find_register(node* ast_node);
+char* get_predef_reg_name_by_id(char* id);
 
-//void generate_reg_name(reg* theReg, bool is) {
-//    if (!theReg || ! regName) return;
-//    theReg->reg_name = strdup(regName);
-//    return;
-//}
-
-char* get_predef_reg_name_by_id(char* id) {
-    char* regName = NULL;
-    if (!id) return regName;
-    if (!strcmp(id, "gl_FragColor")) {
-        regName = strdup("result.color");
-    } else if (!strcmp(id, "gl_FragDepth")) {
-        regName = strdup("result.depth");
-    } else if (!strcmp(id, "gl_FragCoord")) {
-        regName = strdup("fragment.position");
-    } else if (!strcmp(id, "gl_TexCoord")) {
-        regName = strdup("fragment.texcoord");
-    } else if (!strcmp(id, "gl_Color")) {
-        regName = strdup("fragment.color");
-    } else if (!strcmp(id, "gl_Secondary")) {
-        regName = strdup("fragment.color.secondary");
-    } else if (!strcmp(id, "gl_FogFragCoord")) {
-        regName = strdup("fragment.fogcoord");
-    } else if (!strcmp(id, "gl_Light_Half")) {
-        regName = strdup("state.light[0].half");
-    } else if (!strcmp(id, "gl_Light_Ambient")) {
-        regName = strdup("state.lightmodel.ambient");
-    } else if (!strcmp(id, "gl_Material_Shininess")) {
-        regName = strdup("state.material.shininess");
-    } else if (!strcmp(id, "env1")) {
-        regName = strdup("program.env[1]");
-    } else if (!strcmp(id, "env2")) {
-        regName = strdup("program.env[2]");
-    } else if (!strcmp(id, "env3")) {
-        regName = strdup("program.env[3]");
-    }
-    return regName;
-}
-
-/*
+/* REMOVE THIS 
  * get_new_reg
  * allocate a new register for the input node
  */
-reg* get_new_reg(node* ast_node) {
-    //TODO: 
-    reg* new_reg = (reg *)malloc(sizeof(reg));
-    new_reg->reg_name = "new_reg";
-    return new_reg;
-}
 
-//
-///*
-// * constructor_ARB_help
-// * helper methods specifically for constructor ARB code print
-// */
-//void constructor_ARB_help(node* constr_node) {
-//    if (ast == NULL) {
-//        return;
-//    }
-//
-//    node_kind kind = ast->kind;
-//    switch (kind) {
-//        case SCOPE_NODE:
-//        {
-//            printf("scope node\n");
-//        }
-//            break;
-//            
-//        case CONSTRUCTOR_NODE: 
-//        {
-//            fprintf(outputFile, "MOV ");
-//            reg* constr_reg = get_new_reg(ast);
-//            if (!constr_reg) {
-//                fprintf(outputFile, "%s, ", constr_reg->reg_name);
-//            } else {
-//                //FIXME: rm printf statements
-//                printf("Error: [constructor_ARB_help]: register is NULL\n");
-//                errorOccurred = true;
-//                exit(1);
-//            }
-//            fprintf(outputFile, "{");
-//            constructor_ARB_help(&(ast->constructor.args));
-//            fprintf(outputFile, "}\n");
-//        }
-//            break;
-//            
-//        case ARGS_NODE:
-//            constructor_ARB_help(&(ast->args_node.args));
-//            fprintf(outputFile, ", ");
-//            constructor_ARB_help(&(ast->args_node.expr));
-//            break;
-//        
-//        case INT_NODE:
-//            fprintf(outputFile, "%d", ast->int_val);
-//            break;
-//
-//        case FLOAT_NODE:
-//            fprintf(outputFile, "%f", ast->float_val);
-//            break;
-//
-//        case BOOL_NODE:
-//            if (ast->bool_val == 0) {
-//                fprintf(outputFile, "0.0");
-//            } else {
-//                fprintf(outputFile, "1.0");
-//            }
-//            break;
-//        
-//        default:
-//            printf("Error: [constructor_ARB_help] unexpected node type\n");
-//            break;
-//    }
-//}
-
+// Global variables
+reg* reg_head = NULL;
+int param_reg_counter = 0;
+int temp_reg_counter = 0;
 /**********************************************************************
  * Lab 4: Code Generation
  *********************************************************************/ 
@@ -271,9 +169,11 @@ void genCode_help(node* ast, int mode) {
             //type LPARENTHESES arguments RPARENTHESES
             //TODO: 
             fprintf(outputFile, "MOV ");
-            reg* constr_reg = get_new_reg(ast);
+            reg* constr_reg = get_register(ast);
+            //reg* garbage_reg = get_register(ast->constructor.args);
             if (constr_reg != NULL) {
                 fprintf(outputFile, "%s, ", constr_reg->reg_name);
+                //fprintf(outputFile, "%s, ", garbage_reg->reg_name);
             } else {
                 //FIXME: rm printf statements
                 printf("Error: [constructor_ARB_help]: register is NULL\n");
@@ -298,6 +198,115 @@ void genCode_help(node* ast, int mode) {
             //printf("[debug]AST Print: unknown AST node\n");
             break;
     }
+}
+    
+reg* get_register(node* ast_node) {
+    if (!ast_node) return NULL;
+    if (find_register(ast_node)) return find_register(ast_node);
+    // Allocate register structure and insert into global table.
+    reg* result = alloc_register(ast_node);
+    add_register(result);
+    return result;
+}
+
+reg* alloc_register(node* ast_node) {
+    if (!ast_node) return NULL;
+    reg* result = (reg*)malloc(sizeof(reg));
+    result->next = NULL;
+    result->ast_node = ast_node;
+    result->type = UNKNOWN_REG_TYPE;
+    result->reg_name = NULL;
+    result->value = -1; // ????
+    
+    char* nameBuf = (char*)malloc(20);
+    // Determine reg type and name based on ast_node
+    switch(ast->kind) {
+        case DECLARATION_NODE:
+            // May be Param type, check if the declr is const.
+            if (ast->declaration.is_const) {
+                result->type = PARAM_REG_TYPE;
+                sprintf(nameBuf, "param_reg_%d", param_reg_counter++);
+                result->reg_name = nameBuf;
+            } else {
+                result->type = TEMP_REG_TYPE;
+                sprintf(nameBuf, "temp_reg_%d", temp_reg_counter++);
+                result->reg_name = nameBuf;
+            }
+            break;
+        case VAR_NODE:
+            // Can be Global(predef_var) type and specific name.
+            if (get_predef_var_by_id(ast->var_node.id)) {
+                free(nameBuf);
+                nameBuf = NULL;
+                result->type = GLOB_REG_TYPE;
+                result->reg_name = get_predef_reg_name_by_id(ast->var_node.id);
+            } else {
+                result->type = TEMP_REG_TYPE;
+                sprintf(nameBuf, "temp_reg_%d", temp_reg_counter++);
+                result->reg_name = nameBuf;
+            }
+            break;
+            
+        default:
+            // All other nodes deserve temp register.
+            result->type = TEMP_REG_TYPE;
+            sprintf(nameBuf, "temp_reg_%d", temp_reg_counter++);
+            result->reg_name = nameBuf;
+            break;
+        
+    }
+        
+    return result;
+}
+
+void add_register(reg* _reg) {
+    // Add at head.
+    if (!_reg) return;
+    _reg->next = reg_head;
+    reg_head = _reg;
+}
+
+reg* find_register(node* ast_node) {
+    if (!reg_head || !ast_node) return NULL;
+    reg* finder = reg_head;
+    while(finder) {
+        if (finder->ast_node == ast_node) return finder;
+        finder = finder->next;
+    }
+    return NULL;
+}
+
+char* get_predef_reg_name_by_id(char* id) {
+    char* regName = NULL;
+    if (!id) return regName;
+    if (!strcmp(id, "gl_FragColor")) {
+        regName = strdup("result.color");
+    } else if (!strcmp(id, "gl_FragDepth")) {
+        regName = strdup("result.depth");
+    } else if (!strcmp(id, "gl_FragCoord")) {
+        regName = strdup("fragment.position");
+    } else if (!strcmp(id, "gl_TexCoord")) {
+        regName = strdup("fragment.texcoord");
+    } else if (!strcmp(id, "gl_Color")) {
+        regName = strdup("fragment.color");
+    } else if (!strcmp(id, "gl_Secondary")) {
+        regName = strdup("fragment.color.secondary");
+    } else if (!strcmp(id, "gl_FogFragCoord")) {
+        regName = strdup("fragment.fogcoord");
+    } else if (!strcmp(id, "gl_Light_Half")) {
+        regName = strdup("state.light[0].half");
+    } else if (!strcmp(id, "gl_Light_Ambient")) {
+        regName = strdup("state.lightmodel.ambient");
+    } else if (!strcmp(id, "gl_Material_Shininess")) {
+        regName = strdup("state.material.shininess");
+    } else if (!strcmp(id, "env1")) {
+        regName = strdup("program.env[1]");
+    } else if (!strcmp(id, "env2")) {
+        regName = strdup("program.env[2]");
+    } else if (!strcmp(id, "env3")) {
+        regName = strdup("program.env[3]");
+    }
+    return regName;
 }
 
 

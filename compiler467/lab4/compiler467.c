@@ -216,9 +216,9 @@ void getOpts (int numargs, char **argstr) {
         case 'U': /* Alternative sink for dumps */
           if (optarg[2] == 0) {
             i += 1;
-            dumpFile = fileOpen (argstr[i], "w", DEFAULT_DUMP_FILE);
+            dumpFile = fileOpen (argstr[i], "w+", DEFAULT_DUMP_FILE);
           } else
-            dumpFile = fileOpen (&optarg[2], "w", DEFAULT_DUMP_FILE);
+            dumpFile = fileOpen (&optarg[2], "w+", DEFAULT_DUMP_FILE);
           break;
         case 'I': /* Alternative input during execution */
           if (optarg[2] == 0) {
