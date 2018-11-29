@@ -41,6 +41,7 @@ char* get_glob_reg_name_by_id(char* id);
 reg* get_latest_register_by_id(char* id, snode* current_scope);
 void print_index_from_num(int i);
 void print_binary_op_cmd(int opcode);
+reg* get_binary_reg_help(node* node, snode* curr_scope);
 
 // Global variables
 reg* reg_head = NULL;
@@ -212,15 +213,15 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
         {
 
             //ADD dst, op1, op2
-            reg* bi_reg = get_register(ast);
+            reg* bi_reg = get_binary_reg_help(ast, curr_scope);
             
             genCode_help(ast->binary_expr.left, 7, curr_scope);
             genCode_help(ast->binary_expr.right, 7, curr_scope);
             
             fprintf(outputFile, "TEMP %s;\n", bi_reg->reg_name);
             print_binary_op_cmd(ast->binary_expr.op);
-            reg* left_reg = get_register(ast->binary_expr.left);
-            reg* right_reg = get_register(ast->binary_expr.right);
+            reg* left_reg = get_binary_reg_help(ast->binary_expr.left, curr_scope);
+            reg* right_reg = get_binary_reg_help(ast->binary_expr.right, curr_scope);
             
             fprintf(outputFile, "%s, ", bi_reg->reg_name);
             fprintf(outputFile, "%s", left_reg->reg_name);
@@ -607,6 +608,20 @@ void print_binary_op_cmd(int opcode) {
             exit(1);
             break;
     }
+}
+
+reg* get_binary_reg_help(node* node, snode* curr_scope) {
+    if (!node || !curr_scope) return NULL;
+    switch(node->kind) {
+        case VAR_NODE:
+            return get_latest_register_by_id(node->var_node.id, curr_scope);
+            break; // makes compiler happy
+        case BINARY_EXPRESSION_NODE:
+            return get_register(node);
+            break;
+        default: return NULL;
+    }
+    return NULL;
 }
 
 /*
