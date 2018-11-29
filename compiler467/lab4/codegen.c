@@ -327,30 +327,30 @@ reg* alloc_register(node* ast_node) {
     
     char* nameBuf = (char*)malloc(20);
     // Determine reg type and name based on ast_node
-    switch(ast->kind) {
+    switch(ast_node->kind) {
         case DECLARATION_NODE:
             // May be Param type, check if the declr is const.
-            if (ast->declaration.is_const) {
+            if (ast_node->declaration.is_const) {
                 result->type = PARAM_REG_TYPE;
-                sprintf(nameBuf, "param_reg_%d", param_reg_counter++);
+                sprintf(nameBuf, "param_reg_%d_%s", param_reg_counter++, ast_node->declaration.id);
                 result->reg_name = nameBuf;
             } else {
                 result->type = TEMP_REG_TYPE;
-                sprintf(nameBuf, "temp_reg_%d", temp_reg_counter++);
+                sprintf(nameBuf, "temp_reg_%d_%s", temp_reg_counter++, ast_node->declaration.id);
                 result->reg_name = nameBuf;
             }
             break;
         case VAR_NODE:
             // Can be Global(predef_var) type and specific name.
-            if (get_predef_var_by_id(ast->var_node.id)) {
+            if (get_predef_var_by_id(ast_node->var_node.id)) {
                 free(nameBuf);  // buffer for glob reg name is allocated elsewhere.
                 nameBuf = NULL;
                 result->ast_node = NULL;    //Global registers shouldn't be associated with any node.
                 result->type = GLOB_REG_TYPE;
-                result->reg_name = get_glob_reg_name_by_id(ast->var_node.id);
+                result->reg_name = get_glob_reg_name_by_id(ast_node->var_node.id);
             } else {
                 result->type = TEMP_REG_TYPE;
-                sprintf(nameBuf, "temp_reg_%d", temp_reg_counter++);
+                sprintf(nameBuf, "temp_reg_%d_%s", temp_reg_counter++, ast_node->var_node.id);
                 result->reg_name = nameBuf;
             }
             break;
