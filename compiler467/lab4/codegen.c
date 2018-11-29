@@ -146,6 +146,10 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
                 if (mode == 2) {
                     reg* var_reg = get_latest_register_by_id(ast->var_node.id, curr_scope);
                     fprintf(outputFile, "%s", var_reg->reg_name);
+                    if (ast->var_node.is_vec) {
+                        fprintf(outputFile, ".");
+                        print_index_from_num(ast->assign_statement.var->var_node.vec_idx);
+                    }
                 }
             }
         }
@@ -182,8 +186,8 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             }
             break;
            
-//      case EXPRESSION_NODE: 
-//          break;
+      case EXPRESSION_NODE: 
+          break;
 
         case UNARY_EXPRESSION_NODE:
             break;
@@ -244,7 +248,7 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
                 }
                 
                 // IMPORTANT: Change the node reference in symbol table to current node.
-                // Fix this doesn't apply to vectorly-accessed variables. The node reference is NOT overriden.
+                // Fix: this change doesn't apply to vectorly-accessed variables, since the node reference is NOT overriden.
                 if (!is_assign_var_vec && !get_predef_var_by_id(ast->assign_statement.var->var_node.id)) {
                     sentry* sentry_to_update = find_latest_sentry_by_id(ast->assign_statement.var->var_node.id, curr_scope);
                     sentry_to_update->node_ref = ast; // Let it segfault if this returns NULL. What happened?
