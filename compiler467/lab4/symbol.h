@@ -51,6 +51,7 @@ sentry* sentry_push(sentry* sentry, snode* snode);
 sentry* sentry_pop(snode* snode);
 void sentry_print(sentry* sentry);
 sentry* find_sentry_in_snode_by_id(char* id, snode* snode);
+sentry* find_latest_sentry_by_id(char* id, snode* current_scope);
 sentry* remove_sentry_from_snode(sentry* sentry, snode* snode);
 sentry* ast_node_to_sentry(node* ast_node);
         

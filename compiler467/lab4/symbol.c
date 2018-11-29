@@ -78,6 +78,17 @@ sentry* find_sentry_in_snode_by_id(char* id, snode* snode) {
     return NULL;
 }
 
+// MUST OVERRIDE NODE_REF WHEN RE-ASSIGNING THE VARIABLE!!!
+sentry* find_latest_sentry_by_id(char* id, snode* current_scope) {
+    if (!id || !current_scope) return NULL;
+    sentry* finder = NULL;
+    while (!finder && current_scope) {
+        finder = find_sentry_in_snode_by_id(id, current_scope);
+        current_scope = current_scope->parent_scope;
+    }
+    return finder;
+}
+
 sentry* sentry_pop(snode* snode) {
     if (!snode || !snode->sentry_head) return NULL;
     return remove_sentry_from_snode(snode->sentry_head, snode);

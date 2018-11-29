@@ -34,107 +34,15 @@ void add_register(reg* _reg);
 reg* alloc_register(node* ast_node);
 reg* find_register(node* ast_node);
 char* get_predef_reg_name_by_id(char* id);
-
-/* REMOVE THIS 
- * get_new_reg
- * allocate a new register for the input node
- */
-reg* get_new_reg(node* ast_node) {
-    //TODO: 
-    reg* new_reg = (reg *)malloc(sizeof(reg));
-    new_reg->reg_name = "new_reg";
-    return new_reg;
-}
-
-/*
- * 
- */
-void print_index_from_num(int i) {
-    switch(i) {
-        case 0:
-            printf("x");
-            break;
-        case 1:
-            printf("y");
-            break;
-        case 2:
-            printf("z");
-            break;
-        case 3:
-            printf("w");
-            break;
-        default:
-            printf("Error: [print_index_from_num]: i not in range\n");
-            break;
-    }
-}
-
-//
-///*
-// * constructor_ARB_help
-// * helper methods specifically for constructor ARB code print
-// */
-//void constructor_ARB_help(node* constr_node) {
-//    if (ast == NULL) {
-//        return;
-//    }
-//
-//    node_kind kind = ast->kind;
-//    switch (kind) {
-//        case SCOPE_NODE:
-//        {
-//            printf("scope node\n");
-//        }
-//            break;
-//            
-//        case CONSTRUCTOR_NODE: 
-//        {
-//            fprintf(outputFile, "MOV ");
-//            reg* constr_reg = get_new_reg(ast);
-//            if (!constr_reg) {
-//                fprintf(outputFile, "%s, ", constr_reg->reg_name);
-//            } else {
-//                //FIXME: rm printf statements
-//                printf("Error: [constructor_ARB_help]: register is NULL\n");
-//                errorOccurred = true;
-//                exit(1);
-//            }
-//            fprintf(outputFile, "{");
-//            constructor_ARB_help(&(ast->constructor.args));
-//            fprintf(outputFile, "}\n");
-//        }
-//            break;
-//            
-//        case ARGS_NODE:
-//            constructor_ARB_help(&(ast->args_node.args));
-//            fprintf(outputFile, ", ");
-//            constructor_ARB_help(&(ast->args_node.expr));
-//            break;
-//        
-//        case INT_NODE:
-//            fprintf(outputFile, "%d", ast->int_val);
-//            break;
-//
-//        case FLOAT_NODE:
-//            fprintf(outputFile, "%f", ast->float_val);
-//            break;
-//
-//        case BOOL_NODE:
-//            if (ast->bool_val == 0) {
-//                fprintf(outputFile, "0.0");
-//            } else {
-//                fprintf(outputFile, "1.0");
-//            }
-//            break;
-//        
-//        default:
-//            printf("Error: [constructor_ARB_help] unexpected node type\n");
-//            break;
-//    }
-//}
+reg* find_register_by_ast(node* ast_node);
+reg* find_register_by_reg_name(char* reg_name);
+char* get_glob_reg_name_by_id(char* id);
+reg* get_latest_register_by_id(char* id, snode* current_scope);
+void print_index_from_num(int i);
 
 // Global variables
 reg* reg_head = NULL;
+snode* codegen_symbol_table = NULL;
 int param_reg_counter = 0;
 int temp_reg_counter = 0;
 /**********************************************************************
@@ -205,7 +113,7 @@ void genCode_help(node* ast, int mode) {
         case VAR_NODE:
         {
             //TODO: 
-            char* var_reg_name = get_predef_reg_name_by_id(ast->var_node.id);
+            char* var_reg_name = get_glob_reg_name_by_id(ast->var_node.id);
             if (var_reg_name != NULL) {
                 fprintf(outputFile, "%s", var_reg_name);
             } else {
@@ -282,6 +190,7 @@ void genCode_help(node* ast, int mode) {
             
         case ASSIGNMENT_STATEMENT_NODE:
         {
+            // MUST OVERRIDE SYMBOL ENTRY'S NODE_REF TO THIS NODE WHEN REASSIGNING VARIABLE VALUES!!!
             //TODO: variable ASSIGNMENT expression SEMICOLON
             fprintf(outputFile, "#ASSIGMENT @ line %d\n", ast->line_num);
             genCode_help(ast->assign_statement.var, 0);
@@ -370,7 +279,7 @@ void genCode_help(node* ast, int mode) {
     
 reg* get_register(node* ast_node) {
     if (!ast_node) return NULL;
-    if (find_register(ast_node)) return find_register(ast_node);
+    if (find_register_by_ast(ast_node)) return find_register_by_ast(ast_node);
     // Allocate register structure and insert into global table.
     reg* result = alloc_register(ast_node);
     add_register(result);
@@ -404,10 +313,11 @@ reg* alloc_register(node* ast_node) {
         case VAR_NODE:
             // Can be Global(predef_var) type and specific name.
             if (get_predef_var_by_id(ast->var_node.id)) {
-                free(nameBuf);
+                free(nameBuf);  // buffer for glob reg name is allocated elsewhere.
                 nameBuf = NULL;
+                result->ast_node = NULL;    //Global registers shouldn't be associated with any node.
                 result->type = GLOB_REG_TYPE;
-                result->reg_name = get_predef_reg_name_by_id(ast->var_node.id);
+                result->reg_name = get_glob_reg_name_by_id(ast->var_node.id);
             } else {
                 result->type = TEMP_REG_TYPE;
                 sprintf(nameBuf, "temp_reg_%d", temp_reg_counter++);
@@ -434,7 +344,7 @@ void add_register(reg* _reg) {
     reg_head = _reg;
 }
 
-reg* find_register(node* ast_node) {
+reg* find_register_by_ast(node* ast_node) {
     if (!reg_head || !ast_node) return NULL;
     reg* finder = reg_head;
     while(finder) {
@@ -444,7 +354,17 @@ reg* find_register(node* ast_node) {
     return NULL;
 }
 
-char* get_predef_reg_name_by_id(char* id) {
+reg* find_register_by_reg_name(char* reg_name) {
+    if (!reg_name) return NULL;
+    reg* finder = reg_head;
+    while(finder) {
+        if (!strcmp(finder->reg_name, reg_name)) return finder;
+        finder = finder->next;
+    }
+    return NULL;
+}
+
+char* get_glob_reg_name_by_id(char* id) {
     char* regName = NULL;
     if (!id) return regName;
     if (!strcmp(id, "gl_FragColor")) {
@@ -477,6 +397,58 @@ char* get_predef_reg_name_by_id(char* id) {
     return regName;
 }
 
+reg* get_glob_reg_by_predef_id(char* predef_id) {
+    if (!predef_id || !get_glob_reg_name_by_id(predef_id)) return NULL;
+    char* glob_reg_name = get_glob_reg_name_by_id(predef_id);
+    reg* glob_reg = find_register_by_reg_name(glob_reg_name);
+    if (!glob_reg) {
+        // Allocate a global register
+        glob_reg = (reg*)malloc(sizeof(reg));
+        glob_reg->next = NULL;
+        glob_reg->ast_node = NULL;  //global registers shouldn't be associated with any node.
+        glob_reg->type = GLOB_REG_TYPE;
+        glob_reg->reg_name = glob_reg_name;
+        glob_reg->value = -1;
+        add_register(glob_reg); // Add to list
+    }
+    return glob_reg;
+}
+
+// Find the register for a variable in the most local scope. Return global register for predefined variables.
+// Purpose of this is to get the register for a variable id in any scope.
+reg* get_latest_register_by_id(char* id, snode* current_scope) {
+    if (!id || current_scope) return NULL;
+    if (get_glob_reg_name_by_id(id)) return get_glob_reg_by_predef_id(get_glob_reg_name_by_id(id));
+    // Consult the symbol table for the most local variable's node.
+    sentry* latest_sentry = find_latest_sentry_by_id(id, current_scope);
+    
+    if (!latest_sentry) return NULL; // Very unlikely that variable with id is undeclared globally, given passed semantic checking.
+    
+    return get_register(latest_sentry->node_ref);
+}
+
+/*
+ * 
+ */
+void print_index_from_num(int i) {
+    switch(i) {
+        case 0:
+            printf("x");
+            break;
+        case 1:
+            printf("y");
+            break;
+        case 2:
+            printf("z");
+            break;
+        case 3:
+            printf("w");
+            break;
+        default:
+            printf("Error: [print_index_from_num]: i not in range\n");
+            break;
+    }
+}
 
 /*
  * genCode
