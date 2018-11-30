@@ -154,7 +154,7 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
                     fprintf(outputFile, "%s", var_reg->reg_name);
                     if (ast->var_node.is_vec) {
                         fprintf(outputFile, ".");
-                        print_index_from_num(ast->assign_statement.var->var_node.vec_idx);
+                        print_index_from_num(ast->var_node.vec_idx);
                     }
                 }
             }
@@ -305,6 +305,8 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
                 fprintf(outputFile, "%s;\n", assign_stmt_reg->reg_name);
             }
             
+            
+            
             fprintf(outputFile, "MOV ");
             if (is_predef_var_assign) {
                 if (ast->assign_statement.var->var_node.is_vec) {
@@ -346,11 +348,36 @@ void genCode_help(node* ast, int mode, snode* curr_scope) {
             
             if (ast->assign_statement.expr->kind == VAR_NODE) {
                 reg* assign_expr_var_reg = get_latest_register_by_id(ast->assign_statement.expr->var_node.id, curr_scope);
+                
+                char* assignment_expr_predef_reg = get_glob_reg_name_by_id(ast->assign_statement.expr->var_node.id);
+                int is_predef_expr_assign = 0;
+                if (assignment_expr_predef_reg != NULL) {
+                    is_predef_expr_assign = 1;
+                }
+                
                 if (assign_expr_var_reg == NULL) {
                     printf("ERROR: [ASSIGNMENT] var_reg is NULL\n");
                     exit(1);
                 }
-                fprintf(outputFile, "%s;\n", assign_expr_var_reg->reg_name);
+                
+                if (is_predef_expr_assign) {
+                    //if it is a predefined var
+                    if (ast->assign_statement.expr->var_node.is_vec) {
+                        fprintf(outputFile, "%s.", assignment_expr_predef_reg);
+                        print_index_from_num(ast->assign_statement.expr->var_node.vec_idx);
+                        fprintf(outputFile, ";\n");
+                    } else {
+                        fprintf(outputFile, "%s;\n", assignment_expr_predef_reg);
+                    }
+                } else {
+                    if (ast->assign_statement.expr->var_node.is_vec) {
+                        fprintf(outputFile, "%s.", assign_expr_var_reg->reg_name);
+                        print_index_from_num(ast->assign_statement.expr->var_node.vec_idx);
+                        fprintf(outputFile, ";\n");
+                    } else {
+                        fprintf(outputFile, "%s;\n", assign_expr_var_reg->reg_name);
+                    }
+                }
             } else {
                 fprintf(outputFile, "%s;\n", assign_expr_reg->reg_name);
             }
