@@ -1,6 +1,5 @@
 # MiniGLSL Compiler
 
-***
 ## Project Overview
 This project is to implement a compiler which interprets the code written in MiniGLSL into ARB Assembly. This project is written in C.
 
